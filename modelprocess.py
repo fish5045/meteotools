@@ -12,7 +12,7 @@ def Make_vertical_axis(heightstart, heightend, dp, inunit='m'):
          交錯垂直座標        heights        [lenheight-1]
     選項: 輸入的單位         inunit           'm'
     '''
-    
+
     #檢查單位、單位轉換
     if inunit not in ['m', 'Pa', 'km', 'hPa']:
         raise UnitError('不支援的單位')
@@ -27,8 +27,8 @@ def Make_vertical_axis(heightstart, heightend, dp, inunit='m'):
 
     #建立垂直座標
     height = np.arange(heightstart, heightend+0.01, dp, dtype='float64')
-    heights = height[:-1] + dp/2 
-    
+    heights = height[:-1] + dp/2
+
     return height, heights
 
 
@@ -40,7 +40,7 @@ def Make_tangential_axis(thetastart, thetaend, dtheta, inunit='rad'):
          交錯切向座標          thetas       [Nt-1] or [Nt](完整一圈)
     選項: 輸入的單位           inunit       'rad'
     '''
-    
+
     #檢查單位、單位轉換
     if inunit not in ['deg', 'rad']:
         raise UnitError('不支援的單位')
@@ -48,13 +48,13 @@ def Make_tangential_axis(thetastart, thetaend, dtheta, inunit='rad'):
         thetastart *= np.pi/180
         thetaend *= np.pi/180
         dtheta *= np.pi/180
-    
+
     #建立切向座標(圓柱座標)
     theta = np.arange(thetastart, thetaend+0.00001, dtheta, dtype='float64')
     thetas = (theta[:-1] + theta[1:])/2
     if thetaend-thetastart == 2*np.pi:
         theta = theta[:-1]
-    
+
     return theta, thetas
 
 
@@ -66,7 +66,7 @@ def Make_radial_axis(rmin, rmax, dr, inunit='m'):
          交錯徑向座標        rs        [Nr-1]
     選項: 輸入的單位         inunit    'm'
     '''
-    
+
     #檢查單位、單位轉換
     if inunit not in ['m', 'km']:
         raise UnitError('不支援的單位')
@@ -74,9 +74,9 @@ def Make_radial_axis(rmin, rmax, dr, inunit='m'):
         rmin *= 1000
         rmax *= 1000
         dr *= 1000
-        
+
     #建立徑向座標(圓柱座標)
-    r = np.arange(rmin, rmax+0.0001, dr, dtype='float64') 
+    r = np.arange(rmin, rmax+0.0001, dr, dtype='float64')
     rs = r[:-1] + dr/2
     return r, rs
 
@@ -89,7 +89,7 @@ def Array_is_the_same(a, b, tor=0):
     輸出: bool
     選項: 浮點數容許的round off error 範圍 (tor)
     '''
-    
+
     if a.shape != b.shape:
         return False
     if a.dtype.name != b.dtype.name:
@@ -98,7 +98,7 @@ def Array_is_the_same(a, b, tor=0):
         TF = (a == b)
     else:
         TF = (np.abs(a-b) < tor)
-    
+
     #numpy 中即使對應元素皆為nan，仍為False，因此取代為true
     TF = np.where(np.logical_and(np.isnan(a), np.isnan(b)), True, TF)
     if tor != 0 and a.dtype.name not in ['int32', 'int64', 'float32', 'float64']:
@@ -123,13 +123,13 @@ def interp(dx, dy, xLoc, yLoc, data):
         raise DimensionError("xLoc與yLoc維度需相同")
     elif len(xLoc.shape) == 1 and len(yLoc.shape) == 1:
         xLoc, yLoc = np.meshgrid(xLoc, yLoc)
-        
+
     if len(data.shape) == 2:
         size0 = data.shape[0]
         size1 = data.shape[1]
         output = mf.interp(dx, dy, xLoc, yLoc, data.reshape(1, size0, size1))
         return np.squeeze(output)
-    
+
     elif len(data.shape) == 3:
         output = mf.interp(dx, dy, xLoc, yLoc, data)
         return output
@@ -165,8 +165,8 @@ def Get_wrf_data_cyclinder(filenc, varname, pre, interpHeight,
          該WRF檔案的壓力座標          pre              wrf_var
          要內插到的壓力層             interpHeight     [lenheight]
     輸出: wrf變數                    wrfvar           wrf_var
-         讀取的資料                  var...      
-    選項: 
+         讀取的資料                  var...
+    選項:
          要內插到的圓柱座標x位置       xinterpLoc       [Nt,Nr]    預設 np.array([np.nan])
          要內插到的圓柱座標y位置       yinterpLoc       [Nt,Nr]    預設 np.array([np.nan])
          是否使用內插                interp2cylinder             預設 True
@@ -175,7 +175,7 @@ def Get_wrf_data_cyclinder(filenc, varname, pre, interpHeight,
          不使用內插，回傳等壓直角座標                                   [lenheight,leny,lenx]
     '''
     if interp2cylinder==True and \
-        (Array_is_the_same(xinterpLoc, np.array([np.nan])) 
+        (Array_is_the_same(xinterpLoc, np.array([np.nan]))
          or Array_is_the_same(xinterpLoc, np.array([np.nan]))):
         raise RuntimeError("Fatal Error: Interpolation Function is on but given not enough locations information (xinterpLoc, yinterpLoc).")
 
@@ -188,13 +188,13 @@ def Get_wrf_data_cyclinder(filenc, varname, pre, interpHeight,
             except IndexError:
                 wrfvar = np.array(wrf.getvar(filenc, varname))
                 print("xf, xt, yf, yt are invaild and use the whole grids.")
-            
-    
+
+
     dim = len(wrfvar.shape) # 依照資料的不同維度，有不同功能
-    
+
     if dim < 2:             # 資料小於2維，直接回傳
         return wrfvar
-    
+
     elif dim == 2:          # 資料為2維 (單層)，可選擇內插到圓柱座標
         if interp2cylinder == False:
             return wrfvar, np.array(wrfvar)
@@ -203,7 +203,7 @@ def Get_wrf_data_cyclinder(filenc, varname, pre, interpHeight,
                                   filenc.getncattr('DY'),
                                   xinterpLoc,yinterpLoc,
                                   np.array(wrfvar))
-    
+
     elif dim == 3:         # 資料為3維，可選擇內插到哪幾層高度，可選擇內插到圓柱座標
         var_pre = wrf.interplevel(wrfvar,pre,interpHeight,missing=np.nan)
         if interp2cylinder == False:
@@ -233,8 +233,8 @@ def Nine_pts_smooth(var):
     svar[ 0,-1] = var[ 0,-1]
     svar[-1,-1] = var[-1,-1]
 
-    var = (svar[:-2,:-2] + svar[:-2,1:-1] + svar[:-2,2:] 
-           + svar[1:-1,:-2] + svar[1:-1,1:-1] + svar[1:-1,2:] 
+    var = (svar[:-2,:-2] + svar[:-2,1:-1] + svar[:-2,2:]
+           + svar[1:-1,:-2] + svar[1:-1,1:-1] + svar[1:-1,2:]
            + svar[2:,:-2] + svar[2:,1:-1] + svar[2:,2:])/9.
     return var
 

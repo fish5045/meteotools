@@ -6,15 +6,13 @@ Execute: python build.py
 
 Version: 1.1
 Author: Shang-En Li
-Date: 
+Date:
 """
 
 import os
 import platform
 import subprocess
 import shutil
-
-
 
 
 class task:
@@ -25,16 +23,15 @@ class task:
         self.source_version = source_version
         self.source_type = source_type
         self.optimization = optimization
-        
+
         self.source_code = source_name
-        
+
         if source_version != '':
             self.source_code += source_version
         if source_type != '':
             self.source_code += '.'+source_type
-            
-        self.platform = platform.system()
 
+        self.platform = platform.system()
 
     def UTF8_to_Big5(self):
         try:
@@ -44,8 +41,7 @@ class task:
                 f.write(content)
         except:
             pass
-    
-    
+
     def Big5_to_UTF8(self):
         try:
             with open(self.source_code, 'r', encoding='Big5') as f:
@@ -55,13 +51,11 @@ class task:
         except:
             pass
 
-
     def check_source_encoding(self):
         if self.platform == 'Windows':
             self.UTF8_to_Big5()
         elif self.platform == 'Linux':
             self.Big5_to_UTF8()
-
 
     def move_compiled_to_destination(self):
         if self.platform == 'Windows':
@@ -73,29 +67,25 @@ class task:
             os.replace((dlldir+'\\'+dllname), dllname)
             shutil.rmtree(f'{build_name}')
 
-
     def run_compile(self,):
-        compile_command = f'f2py -m {self.build_name} -c {self.source_code} '+ \
+        compile_command = f'f2py -m {self.build_name} -c {self.source_code} ' + \
                           f'--opt={self.optimization}'
 
         self.check_source_encoding()
-        self.back_content = subprocess.check_output(compile_command, shell=True)
+        self.back_content = subprocess.check_output(
+            compile_command, shell=True)
         self.move_compiled_to_destination()
-        
-            
-        
+
 
 ### compile SEeqn ###
 build_name = 'fastcomputecore'
 source_name = 'subroutine_to_python'
 source_version = ''
-source_type = 'f95'    
+source_type = 'f95'
 optimization = '-O3'
 
-#print(__name__)
+# print(__name__)
 if __name__ == '__main__':
-    SEeqn = task(build_name, source_name, source_version, source_type, optimization)
+    SEeqn = task(build_name, source_name, source_version,
+                 source_type, optimization)
     SEeqn.run_compile()
-
-
-

@@ -7,22 +7,24 @@ if __name__ == 'meteotools.calc':
 else:
     from exceptions import InputError
 
-#熱力參數
-Rd = 287. # J/kg*K
-Cp = 1004. # J/kg*K
-g = 9.8 # m/s^2
-T0 = 250. # K
-P0 = 1000. # hPa
-H = Rd*T0/g # m
+# 熱力參數
+Rd = 287.  # J/kg*K
+Cp = 1004.  # J/kg*K
+g = 9.8  # m/s^2
+T0 = 250.  # K
+P0 = 1000.  # hPa
+H = Rd*T0/g  # m
 kappa = Rd/Cp
 Lv = 2.5e6
-A=2.53e11
-B=5420.
+A = 2.53e11
+B = 5420.
 
-def calc_RZaverage(var, z_axis, r_axis, rmin=np.nan, rmax=np.nan, zmin=np.nan, zmax=np.nan, r_weight=True):
-    if np.min((z_axis[1:]-z_axis[:-1])<0):
+
+def calc_RZaverage(var, z_axis, r_axis, rmin=np.nan, rmax=np.nan, zmin=np.nan,
+                   zmax=np.nan, r_weight=True):
+    if np.min((z_axis[1:]-z_axis[:-1]) < 0):
         raise ValueError("z axis must increase strictly.")
-    if np.min((r_axis[1:]-r_axis[:-1])<0):
+    if np.min((r_axis[1:]-r_axis[:-1]) < 0):
         raise ValueError("r axis must increase strictly.")
     if np.isnan(rmin):
         rmin = r_axis[0]
@@ -32,55 +34,58 @@ def calc_RZaverage(var, z_axis, r_axis, rmin=np.nan, rmax=np.nan, zmin=np.nan, z
         zmin = z_axis[0]
     if np.isnan(zmax):
         zmax = z_axis[-1]
-    
-    z_select = np.logical_and(z_axis>=zmin, z_axis<=zmax)
-    r_select = np.logical_and(r_axis>=rmin, r_axis<=rmax)
-    
-    if r_weight==True:
-        varout = np.nansum(var*r_select*r_axis,axis=1)/np.nansum(r_select*r_axis)
+
+    z_select = np.logical_and(z_axis >= zmin, z_axis <= zmax)
+    r_select = np.logical_and(r_axis >= rmin, r_axis <= rmax)
+
+    if r_weight == True:
+        varout = np.nansum(var*r_select*r_axis,
+                           axis=1)/np.nansum(r_select*r_axis)
     else:
-        varout = np.nanmean(var[:,r_select],axis=1)
+        varout = np.nanmean(var[:, r_select], axis=1)
     varout = np.nanmean(varout[z_select])
     return varout
 
 
 def calc_Raverage(var, r_axis, axis, rmin=np.nan, rmax=np.nan):
-    if np.min((r_axis[1:]-r_axis[:-1])<=0):
+    if np.min((r_axis[1:]-r_axis[:-1]) <= 0):
         raise ValueError("r axis must increase strictly.")
     if np.isnan(rmin):
         rmin = r_axis[0]
     if np.isnan(rmax):
         rmax = r_axis[-1]
-    
-    r_select = np.logical_and(r_axis>=rmin, r_axis<=rmax)
 
-    varout = np.nansum(np.moveaxis(var,axis,-1)*r_select*r_axis,axis=-1)/np.nansum(r_select*r_axis)
+    r_select = np.logical_and(r_axis >= rmin, r_axis <= rmax)
+
+    varout = np.nansum(np.moveaxis(var, axis, -1)
+                       * r_select*r_axis, axis=-1)/np.nansum(r_select*r_axis)
     return varout
 
 
 def calc_Zaverage(var, z_axis, axis, zmin=np.nan, zmax=np.nan):
-    if np.min((z_axis[1:]-z_axis[:-1])<=0):
+    if np.min((z_axis[1:]-z_axis[:-1]) <= 0):
         raise ValueError("z axis must increase strictly.")
     if np.isnan(zmin):
         zmin = z_axis[0]
     if np.isnan(zmax):
         zmax = z_axis[-1]
-    
-    z_select = np.logical_and(z_axis>=zmin, z_axis<=zmax)
-    varout = np.nanmean(np.moveaxis(var,axis,0)[z_select],axis=0)
+
+    z_select = np.logical_and(z_axis >= zmin, z_axis <= zmax)
+    varout = np.nanmean(np.moveaxis(var, axis, 0)[z_select], axis=0)
     return varout
 
-def difference_FFT(var,delta,axis):
-    var = np.moveaxis(var, axis,-1)
+
+def difference_FFT(var, delta, axis):
+    var = np.moveaxis(var, axis, -1)
     yf = fft(var)*2*np.pi/delta
     n = yf.shape[-1]
     yf *= 1j*fftfreq(n)
     output = ifft(yf)
-    output = np.moveaxis(output, axis,-1)
+    output = np.moveaxis(output, axis, -1)
     return output
 
 
-def FD2(var,delta,axis,cyclic=False):
+def FD2(var, delta, axis, cyclic=False):
     '''
     以二階中差分法（邊界使用二階偏差分法）計算變數var的微分值。
 
@@ -101,26 +106,26 @@ def FD2(var,delta,axis,cyclic=False):
     output : array (dim same as var)
         二階差分法微分值。
     '''
-    
+
     delta = float(delta)
-    
+
     # 此方向為週期性
     if cyclic == True:
-        output = (np.roll(var,-1,axis)-np.roll(var,1,axis))/2/delta
+        output = (np.roll(var, -1, axis)-np.roll(var, 1, axis))/2/delta
 
     # 非週期性
     elif cyclic == False:
-        var = np.moveaxis(var, axis,0)
+        var = np.moveaxis(var, axis, 0)
         output = np.zeros(var.shape)*np.nan
         output[0] = (-3*var[0]+4*var[1]-var[2])/2/delta
         output[1:-1] = (var[2:]-var[:-2])/2/delta
         output[-1] = (3*var[-1]-4*var[-2]+var[-3])/2/delta
-        output = np.moveaxis(output,0,axis)
-
+        output = np.moveaxis(output, 0, axis)
 
     return output
 
-def FD2_front(var,delta,axis):
+
+def FD2_front(var, delta, axis):
     '''
     以二階前差分法計算變數var的微分值（下邊界兩排為nan）。
 
@@ -138,16 +143,16 @@ def FD2_front(var,delta,axis):
     output : array (dim same as var)
         二階前差分法微分值。
     '''
-    
+
     delta = float(delta)
-    var = np.moveaxis(var, axis,0)
+    var = np.moveaxis(var, axis, 0)
     output = np.zeros(var.shape)*np.nan
     output[:-2] = (-3*var[:-2]+4*var[1:-1]-var[2:])/2/delta
-    output = np.moveaxis(output,0,axis)
+    output = np.moveaxis(output, 0, axis)
     return output
 
 
-def FD2_back(var,delta,axis):
+def FD2_back(var, delta, axis):
     '''
     以二階後差分法計算變數var的微分值（上邊界兩排為nan）。
 
@@ -166,14 +171,15 @@ def FD2_back(var,delta,axis):
         二階後差分法微分值。
     '''
     delta = float(delta)
-    var = np.moveaxis(var, axis,0)
+    var = np.moveaxis(var, axis, 0)
     output = np.zeros(var.shape)*np.nan
     output[2:] = (3*var[2:]-4*var[1:-1]+var[:-2])/2/delta
-    output = np.moveaxis(output,0,axis)
+    output = np.moveaxis(output, 0, axis)
 
     return output
 
-def FD2_2(var,delta,axis):
+
+def FD2_2(var, delta, axis):
     '''
     以二階中差分法計算變數var的二次微分值（邊界點為偏差分法，準確度二階）。
 
@@ -191,17 +197,18 @@ def FD2_2(var,delta,axis):
     output : array (dim same as var)
         二階中差分法二次微分值。
     '''
-    
+
     delta = float(delta)
-    var = np.moveaxis(var, axis,0)
+    var = np.moveaxis(var, axis, 0)
     output = np.zeros(var.shape)*np.nan
     output[0] = (2*var[0]-5*var[1]+4*var[2]-var[3])/delta/delta
     output[1:-1] = (var[2:]-2*var[1:-1]+var[:-2])/delta/delta
     output[-1] = (2*var[-1]-5*var[-2]+4*var[-3]-var[-4])/delta/delta
-    output = np.moveaxis(output,0,axis)
+    output = np.moveaxis(output, 0, axis)
     return output
 
-def FD2_2_front(var,delta,axis):
+
+def FD2_2_front(var, delta, axis):
     '''
     以二階前差分法計算變數var的二次微分值（下邊界兩排為nan）。
 
@@ -219,15 +226,16 @@ def FD2_2_front(var,delta,axis):
     output : array (dim same as var)
         二階前差分法二次微分值。
     '''
-    
+
     delta = float(delta)
-    var = np.moveaxis(var, axis,0)
+    var = np.moveaxis(var, axis, 0)
     output = np.zeros(var.shape)*np.nan
     output[:-3] = (2*var[:-3]-5*var[1:-2]+4*var[2:-1]-var[3:])/delta/delta
-    output = np.moveaxis(output,0,axis)
+    output = np.moveaxis(output, 0, axis)
     return output
 
-def FD2_2_back(var,delta,axis):
+
+def FD2_2_back(var, delta, axis):
     '''
     以二階後差分法計算變數var的二次微分值（上邊界兩排為nan）。
 
@@ -247,14 +255,14 @@ def FD2_2_back(var,delta,axis):
     '''
 
     delta = float(delta)
-    var = np.moveaxis(var, axis,0)
+    var = np.moveaxis(var, axis, 0)
     output = np.zeros(var.shape)*np.nan
     output[3:] = (2*var[3:]-5*var[2:-1]+4*var[1:-2]-var[:-3])/delta/delta
-    output = np.moveaxis(output,0,axis)
+    output = np.moveaxis(output, 0, axis)
     return output
 
 
-def NanWeightAvg(a,r):
+def NanWeightAvg(a, r):
     '''
     忽略無效值的加權平均，可用於圓柱座標徑向平均。
 
@@ -278,11 +286,11 @@ def NanWeightAvg(a,r):
             rr[i] = 0
         else:
             s += a[i]*rr[i]
-    s/= np.sum(rr)
+    s /= np.sum(rr)
     return s
 
 
-def Find_Root2(a,b,c):
+def Find_Root2(a, b, c):
     '''
     求解 ax^2 + bx + c = 0 solve x 的根
 
@@ -321,16 +329,16 @@ def wswd2uv(ws, wd):
 
     Returns
     -------
-    u : float or array 
+    u : float or array
         東西風
     v : float or array
         南北風
 
     '''
-    
+
     u = -np.sin(wd / 180. * np.pi) * ws
     v = -np.cos(wd / 180. * np.pi) * ws
-    return u,v
+    return u, v
 
 
 def uv2wswd(u, v):
@@ -346,19 +354,21 @@ def uv2wswd(u, v):
 
     Returns
     -------
-    ws : float or array 
+    ws : float or array
         風速
     wd : float or array
         風向
 
     '''
-    
+
     ws = np.sqrt((u * u) + (v * v))
     wd = (np.arctan2(-u, -v) * 180. / np.pi) % 360
     return ws, wd
 
 
-def xy2lonlat(xx, yy, proj='lcc', lat_1=22., lat_2=25., lat_0=23.5, lon_0=120., x_0=0., y_0=0., a=6378137., rf=298.257222101, to_meter=1.):
+def xy2lonlat(
+        xx, yy, proj='lcc', lat_1=22., lat_2=25., lat_0=23.5, lon_0=120.,
+        x_0=0., y_0=0., a=6378137., rf=298.257222101, to_meter=1.):
     '''
     地圖xy座標轉為lon lat
     輸入: 地圖x座標             xx            float or array
@@ -367,12 +377,15 @@ def xy2lonlat(xx, yy, proj='lcc', lat_1=22., lat_2=25., lat_0=23.5, lon_0=120., 
          緯度lat              lat           float or array
     選項: 各地圖資訊            proj, lat_1, lat_2, lat_0, lon_0, x_0, y_0, a, rf, to_meter
     '''
-    
-    isn2004=pj.Proj(f"+proj={proj} +lat_1={lat_1} +lat_2={lat_2} +lat_0={lat_0} +lon_0={lon_0} +x_0={x_0} +y_0={y_0} +no_defs +a={a} +rf={rf} +to_meter={to_meter}")
-    return isn2004(xx,yy,inverse=True)
+
+    isn2004 = pj.Proj(
+        f"+proj={proj} +lat_1={lat_1} +lat_2={lat_2} +lat_0={lat_0} +lon_0={lon_0} +x_0={x_0} +y_0={y_0} +no_defs +a={a} +rf={rf} +to_meter={to_meter}")
+    return isn2004(xx, yy, inverse=True)
 
 
-def lonlat2xy(lon, lat, proj='lcc', lat_1=22., lat_2=25., lat_0=23.5, lon_0=120., x_0=0., y_0=0., a=6378137., rf=298.257222101, to_meter=1.):
+def lonlat2xy(
+        lon, lat, proj='lcc', lat_1=22., lat_2=25., lat_0=23.5, lon_0=120.,
+        x_0=0., y_0=0., a=6378137., rf=298.257222101, to_meter=1.):
     '''
     地圖xy座標轉為lon lat
     輸出:  經度lon              lon           float or array
@@ -381,9 +394,11 @@ def lonlat2xy(lon, lat, proj='lcc', lat_1=22., lat_2=25., lat_0=23.5, lon_0=120.
          地圖y座標             yy            float or array
     選項: 各地圖資訊            proj, lat_1, lat_2, lat_0, lon_0, x_0, y_0, a, rf, to_meter
     '''
-    
-    isn2004=pj.Proj(f"+proj={proj} +lat_1={lat_1} +lat_2={lat_2} +lat_0={lat_0} +lon_0={lon_0} +x_0={x_0} +y_0={y_0} +no_defs +a={a} +rf={rf} +to_meter={to_meter}")
-    return isn2004(lon, lat,inverse=False)
+
+    isn2004 = pj.Proj(
+        f"+proj={proj} +lat_1={lat_1} +lat_2={lat_2} +lat_0={lat_0} +lon_0={lon_0} +x_0={x_0} +y_0={y_0} +no_defs +a={a} +rf={rf} +to_meter={to_meter}")
+    return isn2004(lon, lat, inverse=False)
+
 
 def calc_H(Tv):
     '''
@@ -404,7 +419,7 @@ def calc_H(Tv):
     return Rd*Tv/g
 
 
-def PtoZ(P0,Tv,P):
+def PtoZ(P0, Tv, P):
     '''
     將壓力轉為高度，假設溫度相同(溫度會影響到厚度)
 
@@ -426,7 +441,8 @@ def PtoZ(P0,Tv,P):
     H = calc_H(Tv)
     return np.log(P0/P)*H
 
-def ZtoP(P0,Tv,Z):
+
+def ZtoP(P0, Tv, Z):
     '''
     將高度轉為壓力，假設溫度相同(溫度會影響到厚度)
 
@@ -448,6 +464,7 @@ def ZtoP(P0,Tv,Z):
     H = calc_H(Tv)
     return P0*np.exp(-Z/H)
 
+
 def calc_theta(T, P):
     '''
     計算位溫
@@ -467,9 +484,10 @@ def calc_theta(T, P):
     return T*(100000/P)**kappa
 
 
-def calc_theta_v(T=None, P=None, theta=None, qv=None, es=None, RH=None, Td=None, ql=0):
+def calc_theta_v(
+        T=None, P=None, theta=None, qv=None, es=None, RH=None, Td=None, ql=0):
     '''
-    
+
 
     Parameters
     ----------
@@ -502,7 +520,7 @@ def calc_theta_v(T=None, P=None, theta=None, qv=None, es=None, RH=None, Td=None,
 
     '''
     if type(theta) == type(None):
-        if type(T) != type(None) and type(P) != type(None):    
+        if type(T) != type(None) and type(P) != type(None):
             theta = T*(100000/P)**kappa
         else:
             raise InputError('theta 或 (T,P) 須至少輸入其中一者')
@@ -510,15 +528,15 @@ def calc_theta_v(T=None, P=None, theta=None, qv=None, es=None, RH=None, Td=None,
         if type(es) != type(None) and type(P) != type(None):
             qv = calc_qv(P=P, vapor=es)
         elif type(T) != type(None) and type(RH) != type(None) and type(P) != type(None):
-            qv = calc_qv(P=P,T=T,RH=RH)
+            qv = calc_qv(P=P, T=T, RH=RH)
         elif type(Td) != type(None) and type(P) != type(None):
-            qv = calc_qv(P=P,Td=Td)
-        else: 
+            qv = calc_qv(P=P, Td=Td)
+        else:
             raise InputError('(vapor, P) 或 (T,RH,P) 或 (Td,P) 須至少輸入其中一者')
     return theta*(1+qv*0.61-ql)
 
 
-def calc_T(theta,P):
+def calc_T(theta, P):
     '''
     以位溫計算溫度
 
@@ -554,6 +572,7 @@ def calc_saturated_vapor(T):
     '''
     return 611.2*np.exp(17.67*(T-273.15)/(T-273.15+243.5))
 
+
 def calc_vapor(T, RH=1):
     '''
     計算水氣壓
@@ -569,11 +588,12 @@ def calc_vapor(T, RH=1):
     -------
     float or array
         水氣壓 (Pa)
-        
+
     '''
-    
+
     return RH*calc_saturated_vapor(T)
-    
+
+
 def calc_saturated_qv(T, P):
     '''
     計算飽和混和比
@@ -591,6 +611,7 @@ def calc_saturated_qv(T, P):
         飽和混和比 (kg/kg)
     '''
     return 0.622*calc_saturated_vapor(T)/(P-calc_saturated_vapor(T))
+
 
 def calc_qv(P, T=None, RH=None, vapor=None, Td=None):
     '''
@@ -627,7 +648,7 @@ def calc_qv(P, T=None, RH=None, vapor=None, Td=None):
 
 def qv2vapor(P, qv):
     '''
-    
+
 
     Parameters
     ----------
@@ -644,6 +665,7 @@ def qv2vapor(P, qv):
     '''
     return P*qv/(0.622+qv)
 
+
 def calc_Tv(T, P=None, RH=None, vapor=None, qv=None):
     '''
     計算飽和混和比
@@ -651,7 +673,7 @@ def calc_Tv(T, P=None, RH=None, vapor=None, qv=None):
     Parameters
     ----------
     T : float or array,
-        溫度 (K) 
+        溫度 (K)
     P : float or array, optional
         壓力 (Pa) The default is None.
     RH : float or array, optional
@@ -666,7 +688,7 @@ def calc_Tv(T, P=None, RH=None, vapor=None, qv=None):
     float or array
         虛溫 (K)
     '''
-    
+
     if type(RH) != type(None):
         return T/(1-(calc_vapor(T, RH)/P)*(1-0.622))
     elif type(vapor) != type(None):
@@ -679,7 +701,7 @@ def calc_Tv(T, P=None, RH=None, vapor=None, qv=None):
 
 def calc_rho(P, Tv=None, T=None, RH=None, vapor=None, qv=None):
     '''
-    
+
 
     Parameters
     ----------
@@ -707,10 +729,11 @@ def calc_rho(P, Tv=None, T=None, RH=None, vapor=None, qv=None):
     return P/(Rd*Tv)
 
 
-
 '''
 可能有問題
 '''
+
+
 def calc_Te(T, P=None, RH=None, vapor=None, qv=None):
     '''
     計算相當溫度
@@ -741,6 +764,7 @@ def calc_Te(T, P=None, RH=None, vapor=None, qv=None):
         return T + Lv/Cp*qv
     else:
         raise InputError('(P,RH) 或 (P,vapor) 或 qv須至少輸入一者')
+
 
 def calc_theta_e2(P, T=None, RH=None, vapor=None, qv=None, Te=None):
     '''
@@ -777,6 +801,7 @@ def calc_theta_e2(P, T=None, RH=None, vapor=None, qv=None, Te=None):
     else:
         raise InputError('(P,RH) 或 (P,vapor) 或 qv 或 Te須至少輸入一者')
 
+
 def calc_Tc(T, P=None, RH=None, vapor=None, qv=None):
     '''
     計算凝結溫度condensation temperature
@@ -799,14 +824,14 @@ def calc_Tc(T, P=None, RH=None, vapor=None, qv=None):
     float or array
         凝結溫度 (K)
     '''
-    if  type(qv) == type(None):
+    if type(qv) == type(None):
         if type(RH) != type(None) and type(P) != type(None):
             qv = calc_qv(P=P, T=T, RH=RH)
         elif type(vapor) != type(None) and type(P) != type(None):
             qv = calc_qv(P=P, vapor=vapor)
         else:
             raise InputError('qv 或 (RH,P) 或 (vapor,P)須至少輸入一者')
-    
+
     Tc2 = T
     Tc = 0
     for i in range(10):
@@ -816,7 +841,7 @@ def calc_Tc(T, P=None, RH=None, vapor=None, qv=None):
         Tc2 = Tc
     return Tc
 
-    
+
 def calc_theta_e(T, theta=None, P=None, RH=None, vapor=None, qv=None):
     '''
     計算相當位溫
@@ -854,10 +879,11 @@ def calc_theta_e(T, theta=None, P=None, RH=None, vapor=None, qv=None):
         else:
             raise InputError('qv 或 (RH,P) 或 (vapor,P)須至少輸入一者')
     if type(P) != type(None):
-        Tc = calc_Tc(T,P,qv=qv)
+        Tc = calc_Tc(T, P, qv=qv)
     else:
         raise InputError('需輸入P')
     return theta*np.exp(Lv*qv/Cp/Tc)
+
 
 def calc_theta_es(T, P, theta=None):
     '''
@@ -868,7 +894,7 @@ def calc_theta_es(T, P, theta=None):
     T : float or array
         溫度 (Pa)
     P : float or array
-        壓力 (K) 
+        壓力 (K)
     theta : float or array, optional
         位溫 (K) The default is None.
 
@@ -878,13 +904,14 @@ def calc_theta_es(T, P, theta=None):
         相當位溫 (K)
     '''
     if type(theta) == type(None):
-            theta = calc_theta(T, P)
-    
+        theta = calc_theta(T, P)
+
     qv = calc_saturated_qv(T, P)
-    
+
     return theta*np.exp(Lv*qv/Cp/T)
 
-def calc_dTdz(saturated,T,qv):
+
+def calc_dTdz(saturated, T, qv):
     '''
     計算絕熱溫度遞減率
 
@@ -895,7 +922,7 @@ def calc_dTdz(saturated,T,qv):
     T : float or array
         溫度 (Pa)
     qv : float or array
-        混和比 (kg/kg) 
+        混和比 (kg/kg)
 
     Returns
     -------
@@ -908,7 +935,8 @@ def calc_dTdz(saturated,T,qv):
     else:
         return -g*((1 + Lv*qv/Rd/T) / (Cp + Lv**2*qv*0.622/Rd/T**2))
 
-def calc_Td(es=None,P=None,qv=None):
+
+def calc_Td(es=None, P=None, qv=None):
     '''
     計算露點溫度
 
@@ -931,7 +959,7 @@ def calc_Td(es=None,P=None,qv=None):
     if type(qv) != type(None) and type(P) != type(None):
         es = qv2vapor(P, qv)
     elif type(es) == type(None):
-        raise InputError('需輸入es 或 (P, qv)')   
-        
+        raise InputError('需輸入es 或 (P, qv)')
+
     lnes = np.log(es/611.2)
     return 243.5*lnes / (17.67-lnes) + 273.15

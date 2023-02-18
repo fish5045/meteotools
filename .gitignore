@@ -1,2 +1,6 @@
 __pycache__
 subroutine_to_python.f95.backup
+*.dll
+*.pyd
+*.so
+small_test.py

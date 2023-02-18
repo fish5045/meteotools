@@ -15,7 +15,7 @@ def process_py(pysource):
         if pypath[p] == '':
             pypath.remove('')
     if '.' in pypath:
-        pypath.remove('.') 
+        pypath.remove('.')
     pypath = '.'.join(pypath)[:-3]
     mod = importlib.import_module(pypath)
 
@@ -53,9 +53,9 @@ def process_py(pysource):
                     pycontent.append(f'<bool> {obj}')
                 else:
                     pycontent.append(f'<others> {obj}')
-    
+
     return sorted(pycontent)
-    
+
 
 
 
@@ -69,7 +69,7 @@ def process_dir(above_dir,d):
             d[file] = dict()
             d[file] = process_py(f'{above_dir}/{file}/')
             print(f'{above_dir}/{file}/')
-            
+
 
 package_dir = '.'
 package = dict()
