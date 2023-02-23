@@ -1,6 +1,5 @@
 import numpy as np
 from exceptions import UnitError, DimensionError
-#from . import modelf as mf
 import wrf
 
 
@@ -13,7 +12,7 @@ def Make_vertical_axis(heightstart, heightend, dp, inunit='m'):
     選項: 輸入的單位         inunit           'm'
     '''
 
-    #檢查單位、單位轉換
+    # 檢查單位、單位轉換
     if inunit not in ['m', 'Pa', 'km', 'hPa']:
         raise UnitError('不支援的單位')
     if inunit == 'km':
@@ -25,7 +24,7 @@ def Make_vertical_axis(heightstart, heightend, dp, inunit='m'):
         heightend *= 100
         dp *= 100
 
-    #建立垂直座標
+    # 建立垂直座標
     height = np.arange(heightstart, heightend+0.01, dp, dtype='float64')
     heights = height[:-1] + dp/2
 
@@ -41,7 +40,7 @@ def Make_tangential_axis(thetastart, thetaend, dtheta, inunit='rad'):
     選項: 輸入的單位           inunit       'rad'
     '''
 
-    #檢查單位、單位轉換
+    # 檢查單位、單位轉換
     if inunit not in ['deg', 'rad']:
         raise UnitError('不支援的單位')
     if inunit == 'deg':
@@ -49,7 +48,7 @@ def Make_tangential_axis(thetastart, thetaend, dtheta, inunit='rad'):
         thetaend *= np.pi/180
         dtheta *= np.pi/180
 
-    #建立切向座標(圓柱座標)
+    # 建立切向座標(圓柱座標)
     theta = np.arange(thetastart, thetaend+0.00001, dtheta, dtype='float64')
     thetas = (theta[:-1] + theta[1:])/2
     if thetaend-thetastart == 2*np.pi:
@@ -67,7 +66,7 @@ def Make_radial_axis(rmin, rmax, dr, inunit='m'):
     選項: 輸入的單位         inunit    'm'
     '''
 
-    #檢查單位、單位轉換
+    # 檢查單位、單位轉換
     if inunit not in ['m', 'km']:
         raise UnitError('不支援的單位')
     if inunit == 'km':
@@ -75,7 +74,7 @@ def Make_radial_axis(rmin, rmax, dr, inunit='m'):
         rmax *= 1000
         dr *= 1000
 
-    #建立徑向座標(圓柱座標)
+    # 建立徑向座標(圓柱座標)
     r = np.arange(rmin, rmax+0.0001, dr, dtype='float64')
     rs = r[:-1] + dr/2
     return r, rs
@@ -94,14 +93,16 @@ def Array_is_the_same(a, b, tor=0):
         return False
     if a.dtype.name != b.dtype.name:
         return False
-    if tor == 0 or a.dtype.name not in ['int32', 'int64', 'float32','float64']:
+    if tor == 0 or a.dtype.name not in [
+            'int32', 'int64', 'float32', 'float64']:
         TF = (a == b)
     else:
         TF = (np.abs(a-b) < tor)
 
-    #numpy 中即使對應元素皆為nan，仍為False，因此取代為true
+    # numpy 中即使對應元素皆為nan，仍為False，因此取代為true
     TF = np.where(np.logical_and(np.isnan(a), np.isnan(b)), True, TF)
-    if tor != 0 and a.dtype.name not in ['int32', 'int64', 'float32', 'float64']:
+    if tor != 0 and a.dtype.name not in [
+            'int32', 'int64', 'float32', 'float64']:
         print('Warning: Because two input arrays are not integer or float, tor is useless. Output True means all of the corresponding elements are the same.')
     if False in TF:
         return False
@@ -137,27 +138,28 @@ def interp(dx, dy, xLoc, yLoc, data):
         raise DimensionError("來源資料(data)維度需為2或3")
 
 
-def Make_cyclinder_coord(centerLocation,r,theta):
+def Make_cyclinder_coord(centerLocation, r, theta):
     '''
     以颱風中心為原點，建立水平圓柱座標系的(theta,r)對應的直角座標位置
     輸入: centerLocation        颱風中心位置(y,x)      [1,1]
          r                     徑向座標               [lenr]
          theta                 徑向座標               [lentheta]
     '''
-    #建立圓柱座標系 r為要取樣的位置點
-    #建立需要取樣的同心圓環狀位置(第1維:切向角度，第二維:中心距離)
-    #建立要取樣的座標位置(水平交錯)
-    xThetaRLocation = r.reshape(1,-1)*np.cos(theta).reshape(-1,1) \
-                      + centerLocation[1]
-    yThetaRLocation = r.reshape(1,-1)*np.sin(theta).reshape(-1,1) \
-                      + centerLocation[0]
+    # 建立圓柱座標系 r為要取樣的位置點
+    # 建立需要取樣的同心圓環狀位置(第1維:切向角度，第二維:中心距離)
+    # 建立要取樣的座標位置(水平交錯)
+    xThetaRLocation = r.reshape(1, -1)*np.cos(theta).reshape(-1, 1) \
+        + centerLocation[1]
+    yThetaRLocation = r.reshape(1, -1)*np.sin(theta).reshape(-1, 1) \
+        + centerLocation[0]
 
     return xThetaRLocation, yThetaRLocation
 
 
-def Get_wrf_data_cyclinder(filenc, varname, pre, interpHeight,
-                           xinterpLoc=np.array([np.nan]), yinterpLoc=np.array([np.nan]),
-                           interp2cylinder=True, wrfvar=[]):
+def Get_wrf_data_cyclinder(
+        filenc, varname, pre, interpHeight, xinterpLoc=np.array([np.nan]),
+        yinterpLoc=np.array([np.nan]),
+        interp2cylinder=True, wrfvar=[]):
     '''
     讀取WRF資料(並內插至圓柱座標,optional)
     輸入: WRF output nc檔案          filenc           nc_file
@@ -174,10 +176,11 @@ def Get_wrf_data_cyclinder(filenc, varname, pre, interpHeight,
     注意: 若使用內插，xinterpLo與yinterpLoc需給定，此時回傳圓柱座標資料    [lenheight,Nt,Nr]
          不使用內插，回傳等壓直角座標                                   [lenheight,leny,lenx]
     '''
-    if interp2cylinder==True and \
+    if interp2cylinder == True and \
         (Array_is_the_same(xinterpLoc, np.array([np.nan]))
          or Array_is_the_same(xinterpLoc, np.array([np.nan]))):
-        raise RuntimeError("Fatal Error: Interpolation Function is on but given not enough locations information (xinterpLoc, yinterpLoc).")
+        raise RuntimeError(
+            "Fatal Error: Interpolation Function is on but given not enough locations information (xinterpLoc, yinterpLoc).")
 
     if wrfvar == []:        # 讀取WRF變數
         try:
@@ -189,8 +192,7 @@ def Get_wrf_data_cyclinder(filenc, varname, pre, interpHeight,
                 wrfvar = np.array(wrf.getvar(filenc, varname))
                 print("xf, xt, yf, yt are invaild and use the whole grids.")
 
-
-    dim = len(wrfvar.shape) # 依照資料的不同維度，有不同功能
+    dim = len(wrfvar.shape)  # 依照資料的不同維度，有不同功能
 
     if dim < 2:             # 資料小於2維，直接回傳
         return wrfvar
@@ -201,17 +203,17 @@ def Get_wrf_data_cyclinder(filenc, varname, pre, interpHeight,
         else:
             return wrfvar, interp(filenc.getncattr('DX'),
                                   filenc.getncattr('DY'),
-                                  xinterpLoc,yinterpLoc,
+                                  xinterpLoc, yinterpLoc,
                                   np.array(wrfvar))
 
     elif dim == 3:         # 資料為3維，可選擇內插到哪幾層高度，可選擇內插到圓柱座標
-        var_pre = wrf.interplevel(wrfvar,pre,interpHeight,missing=np.nan)
+        var_pre = wrf.interplevel(wrfvar, pre, interpHeight, missing=np.nan)
         if interp2cylinder == False:
             return wrfvar, var_pre
         else:
             return wrfvar, interp(filenc.getncattr('DX'),
                                   filenc.getncattr('DY'),
-                                  xinterpLoc,yinterpLoc,
+                                  xinterpLoc, yinterpLoc,
                                   var_pre)
 
 
@@ -223,19 +225,19 @@ def Nine_pts_smooth(var):
 
     '''
     svar = np.zeros([var.shape[0]+2, var.shape[1]+2])
-    svar[1:-1,1:-1] = var
-    svar[0,1:-1] = var[0,:]
-    svar[-1,1:-1] = var[-1,:]
-    svar[1:-1,0] = var[:,0]
-    svar[1:-1,-1] = var[:,-1]
-    svar[ 0, 0] = var[ 0, 0]
+    svar[1:-1, 1:-1] = var
+    svar[0, 1:-1] = var[0, :]
+    svar[-1, 1:-1] = var[-1, :]
+    svar[1:-1, 0] = var[:, 0]
+    svar[1:-1, -1] = var[:, -1]
+    svar[0, 0] = var[0, 0]
     svar[-1, 0] = var[-1, 0]
-    svar[ 0,-1] = var[ 0,-1]
-    svar[-1,-1] = var[-1,-1]
+    svar[0, -1] = var[0, -1]
+    svar[-1, -1] = var[-1, -1]
 
-    var = (svar[:-2,:-2] + svar[:-2,1:-1] + svar[:-2,2:]
-           + svar[1:-1,:-2] + svar[1:-1,1:-1] + svar[1:-1,2:]
-           + svar[2:,:-2] + svar[2:,1:-1] + svar[2:,2:])/9.
+    var = (svar[:-2, :-2] + svar[:-2, 1:-1] + svar[:-2, 2:]
+           + svar[1:-1, :-2] + svar[1:-1, 1:-1] + svar[1:-1, 2:]
+           + svar[2:, :-2] + svar[2:, 1:-1] + svar[2:, 2:])/9.
     return var
 
 
@@ -247,11 +249,12 @@ def Three_pts_smooth_H(var):
     '''
 
     svar = np.zeros([var.shape[0], var.shape[1]+2])
-    svar[:,1:-1] = var
-    svar[:,0] = var[:,0]
-    svar[:,-1] = var[:,-1]
-    var = (svar[:,:-2] + svar[:,1:-1] + svar[:,2:])/3.
+    svar[:, 1:-1] = var
+    svar[:, 0] = var[:, 0]
+    svar[:, -1] = var[:, -1]
+    var = (svar[:, :-2] + svar[:, 1:-1] + svar[:, 2:])/3.
     return var
+
 
 def Three_pts_smooth_V(var):
     '''
@@ -261,13 +264,11 @@ def Three_pts_smooth_V(var):
     '''
 
     svar = np.zeros([var.shape[0]+2, var.shape[1]])
-    svar[1:-1:,:] = var
-    svar[0,:] = var[0,:]
-    svar[-1,:] = var[-1,:]
-    var = (svar[:-2,:] + svar[1:-1,:] + svar[2:,:])/3.
+    svar[1:-1:, :] = var
+    svar[0, :] = var[0, :]
+    svar[-1, :] = var[-1, :]
+    var = (svar[:-2, :] + svar[1:-1, :] + svar[2:, :])/3.
     return var
 
 
-
-#if __name__ == '__main__':
-
+# if __name__ == '__main__':

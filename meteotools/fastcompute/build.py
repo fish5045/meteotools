@@ -78,7 +78,7 @@ class task:
 
 
 ### compile SEeqn ###
-build_name = 'fastcomputecore'
+build_name = 'fastcompute'
 source_name = 'subroutine_to_python'
 source_version = ''
 source_type = 'f95'

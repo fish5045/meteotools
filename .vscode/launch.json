@@ -15,6 +15,7 @@
         }
     ],
     "env": {
-        "PYTHONPATH": "${fileDirname}"
+        "PYTHONPATH": "${fileDirname}",
+        "PYTHONPATH": "${fileDirname}/.."
     }
 }

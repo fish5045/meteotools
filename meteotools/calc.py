@@ -1,12 +1,13 @@
 import numpy as np
 import pyproj as pj
 from scipy.fft import fft, ifft, fftfreq
-
+from .exceptions import InputError
+'''
 if __name__ == 'meteotools.calc':
     from .exceptions import InputError
 else:
     from exceptions import InputError
-
+'''
 # 熱力參數
 Rd = 287.  # J/kg*K
 Cp = 1004.  # J/kg*K
