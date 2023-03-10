@@ -1,0 +1,42 @@
+import numpy as np
+import pyproj as pj
+from scipy.fft import fft, ifft, fftfreq
+
+
+def xy2lonlat(
+        xx, yy, proj='lcc', lat_1=22., lat_2=25., lat_0=23.5, lon_0=120.,
+        x_0=0., y_0=0., a=6378137., rf=298.257222101, to_meter=1.):
+    '''
+    地圖xy座標轉為lon lat
+    輸入: 地圖x座標             xx            float or array
+         地圖y座標             yy            float or array
+    輸出: 經度lon              lon           float or array
+         緯度lat              lat           float or array
+    選項: 各地圖資訊            proj, lat_1, lat_2, lat_0, lon_0, x_0, y_0, a, rf, to_meter
+    '''
+
+    isn2004 = pj.Proj(
+        f"+proj={proj} +lat_1={lat_1} +lat_2={lat_2} +lat_0={lat_0} +lon_0={lon_0} +x_0={x_0} +y_0={y_0} +no_defs +a={a} +rf={rf} +to_meter={to_meter}")
+    return isn2004(xx, yy, inverse=True)
+
+
+def lonlat2xy(
+        lon, lat, proj='lcc', lat_1=22., lat_2=25., lat_0=23.5, lon_0=120.,
+        x_0=0., y_0=0., a=6378137., rf=298.257222101, to_meter=1.):
+    '''
+    地圖xy座標轉為lon lat
+    輸出:  經度lon              lon           float or array
+          緯度lat              lat           float or array
+    輸入: 地圖x座標             xx            float or array
+         地圖y座標             yy            float or array
+    選項: 各地圖資訊            proj, lat_1, lat_2, lat_0, lon_0, x_0, y_0, a, rf, to_meter
+    '''
+
+    isn2004 = pj.Proj(
+        f"+proj={proj} +lat_1={lat_1} +lat_2={lat_2} +lat_0={lat_0} +lon_0={lon_0} +x_0={x_0} +y_0={y_0} +no_defs +a={a} +rf={rf} +to_meter={to_meter}")
+    return isn2004(lon, lat, inverse=False)
+
+
+'''
+可能有問題
+'''

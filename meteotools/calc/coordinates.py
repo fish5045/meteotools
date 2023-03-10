@@ -1,8 +1,119 @@
 import numpy as np
 from numpy import ndarray
 from meteotools.interpolation import interp2D_fast_layers
-from meteotools.exceptions import InputError
+from meteotools.exceptions import InputError, UnitError
 from .check_arrays import check_dimension
+
+
+def unit_ratio(in_unit):
+    if in_unit == 'km':
+        return 1000
+    elif in_unit == 'hPa':
+        return 100
+    elif in_unit == 'deg':
+        return np.pi/180
+    else:
+        return 1
+
+
+def Make_vertical_axis(height_start: float, height_end: float,
+                       dz: float, in_unit='m') -> np.ndarray:
+    '''
+    建立垂直座標，可指定單位 (輸出為SI單位)
+
+    Parameters
+    ----------
+    height_start : 起使高度
+    height_end : 結束高度
+    dz : 網格間距
+    in_unit : 單位，可為m, Pa, km, hPa
+
+    Raises
+    ------
+    輸入了不支援的單位
+
+    Returns
+    -------
+    垂直座標 (SI unit)
+    '''
+    # 檢查單位、單位轉換
+    def check_unit():
+        if in_unit not in ['m', 'Pa', 'km', 'hPa']:
+            raise UnitError('不支援的單位')
+
+    check_unit()
+    ratio = unit_ratio(in_unit)
+    height = np.arange(height_start, height_end+0.00001, dz, dtype='float64')
+
+    return height*ratio
+
+
+def Make_tangential_axis(theta_start: float, theta_end: float, dtheta: float,
+                         in_unit='rad') -> np.ndarray:
+    '''
+    建立垂直座標，可指定單位 (輸出為SI單位)
+
+    Parameters
+    ----------
+    theta_start : 起使切向角度
+    theta_end : 結束切向角度
+    dtheta : 網格間距
+    in_unit : 單位，可為rad, deg
+
+    Raises
+    ------
+    輸入了不支援的單位
+
+    Returns
+    -------
+    切向座標 (SI unit)
+    '''
+
+    # 檢查單位、單位轉換
+    def check_unit():
+        if in_unit not in ['deg', 'rad']:
+            raise UnitError('不支援的單位')
+
+    check_unit()
+    ratio = unit_ratio(in_unit)
+    theta = np.arange(theta_start, theta_end+0.00001, dtheta, dtype='float64')
+    if (theta_end - theta_start)*ratio == 2*np.pi:
+        theta = theta[:-1]
+
+    return theta*ratio
+
+
+def Make_radial_axis(r_start: float, r_end: float, dr: float,
+                     in_unit='m') -> np.ndarray:
+    '''
+    建立垂直座標，可指定單位 (輸出為SI單位)
+
+    Parameters
+    ----------
+    r_start : 起使徑向位置
+    r_end : 結束徑向位置
+    dr : 網格間距
+    in_unit : 單位，可為m, km
+
+    Raises
+    ------
+    輸入了不支援的單位
+
+    Returns
+    -------
+    徑向座標 (SI unit)
+    '''
+
+    # 檢查單位、單位轉換
+    def check_unit():
+        if in_unit not in ['m', 'km', ]:
+            raise UnitError('不支援的單位')
+
+    check_unit()
+    ratio = unit_ratio(in_unit)
+    # 建立徑向座標(圓柱座標)
+    r = np.arange(r_start, r_end+0.0001, dr, dtype='float64')
+    return r*ratio
 
 
 def Make_cyclinder_coord(
@@ -19,7 +130,6 @@ def Make_cyclinder_coord(
     Returns
     -------
     圓柱座標的水平格點在直角座標上的位置 (theta,r)
-
     '''
 
     # 建立要取樣的座標位置(水平交錯)
@@ -65,16 +175,16 @@ def cartesian2cylindrical(
     '''
 
     def check_input(centerLocation, r, theta, xTR, yTR):
-        if xTR is not None and yTR is not None:
+        if None not in [xTR, yTR]:
             return xTR, yTR
-        elif centerLocation is not None and r is not None and theta is not None:
+        elif None not in [centerLocation, r, theta]:
             xTR, yTR = Make_cyclinder_coord(centerLocation, r, theta)
             return xTR, yTR
         else:
             raise InputError("(xTR,yTR) 或 (centerLocation,r,theta) 須至少輸入一者")
 
     check_dimension(cartesian_data, 3)
-    xTR, yTR = check_input(centerLocation, r, theta, xTR, yTR)
+    xTR, yTR = check_input(xTR, yTR)
 
     cyl_data = interp2D_fast_layers(dx, dy, xTR, yTR, cartesian_data)
     return cyl_data

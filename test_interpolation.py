@@ -5,9 +5,9 @@ import numpy as np
 # from fastcompute import interp2D_fast
 
 
-def check_exception(exception, function, *args):
+def check_exception(exception, function, *args, **kargs):
     try:
-        function(*args)
+        function(*args, **kargs)
         print('No error.')
     except exception:
         return 0

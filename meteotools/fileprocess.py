@@ -31,7 +31,3 @@ def mkdir(dirpath):
     可給一連串路徑建立一串資料夾，如 "test/a/b/c"
     '''
     Path(dirpath).mkdir(parents=True, exist_ok=True)
-
-
-if __name__ == '__main__':
-    print(get_time_sec(2019, 8, 9, 10, 10, 10, 1))

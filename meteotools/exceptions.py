@@ -15,7 +15,7 @@ class UnitError(Exception):
 
 class InputError(Exception):
     '''
-    單位錯誤
+    輸入的資訊(如變數)錯誤
     '''
     pass
 

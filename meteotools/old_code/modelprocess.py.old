@@ -1,0 +1,67 @@
+import numpy as np
+from exceptions import UnitError, DimensionError
+import wrf
+
+
+def Get_wrf_data_cyclinder(
+        filenc, varname, pre, interpHeight, xinterpLoc=np.array([np.nan]),
+        yinterpLoc=np.array([np.nan]),
+        interp2cylinder=True, wrfvar=[]):
+    '''
+    讀取WRF資料(並內插至圓柱座標,optional)
+    輸入: WRF output nc檔案          filenc           nc_file
+         要讀取的WRF變數(文字)        varname          str
+         該WRF檔案的壓力座標          pre              wrf_var
+         要內插到的壓力層             interpHeight     [lenheight]
+    輸出: wrf變數                    wrfvar           wrf_var
+         讀取的資料                  var...
+    選項:
+         要內插到的圓柱座標x位置       xinterpLoc       [Nt,Nr]    預設 np.array([np.nan])
+         要內插到的圓柱座標y位置       yinterpLoc       [Nt,Nr]    預設 np.array([np.nan])
+         是否使用內插                interp2cylinder             預設 True
+         使用使用給定的wrf變數        wrfvar           wrf_var    預設 []
+    注意: 若使用內插，xinterpLo與yinterpLoc需給定，此時回傳圓柱座標資料    [lenheight,Nt,Nr]
+         不使用內插，回傳等壓直角座標                                   [lenheight,leny,lenx]
+    '''
+    if interp2cylinder == True and \
+        (Array_is_the_same(xinterpLoc, np.array([np.nan]))
+         or Array_is_the_same(xinterpLoc, np.array([np.nan]))):
+        raise RuntimeError(
+            "Fatal Error: Interpolation Function is on but given not enough locations information (xinterpLoc, yinterpLoc).")
+
+    if wrfvar == []:        # 讀取WRF變數
+        try:
+            wrfvar = np.array(wrf.getvar(filenc, varname))
+        except IndexError:
+            try:
+                wrfvar = np.array(wrf.getvar(filenc, varname))
+            except IndexError:
+                wrfvar = np.array(wrf.getvar(filenc, varname))
+                print("xf, xt, yf, yt are invaild and use the whole grids.")
+
+    dim = len(wrfvar.shape)  # 依照資料的不同維度，有不同功能
+
+    if dim < 2:             # 資料小於2維，直接回傳
+        return wrfvar
+
+    elif dim == 2:          # 資料為2維 (單層)，可選擇內插到圓柱座標
+        if interp2cylinder == False:
+            return wrfvar, np.array(wrfvar)
+        else:
+            return wrfvar, interp(filenc.getncattr('DX'),
+                                  filenc.getncattr('DY'),
+                                  xinterpLoc, yinterpLoc,
+                                  np.array(wrfvar))
+
+    elif dim == 3:         # 資料為3維，可選擇內插到哪幾層高度，可選擇內插到圓柱座標
+        var_pre = wrf.interplevel(wrfvar, pre, interpHeight, missing=np.nan)
+        if interp2cylinder == False:
+            return wrfvar, var_pre
+        else:
+            return wrfvar, interp(filenc.getncattr('DX'),
+                                  filenc.getncattr('DY'),
+                                  xinterpLoc, yinterpLoc,
+                                  var_pre)
+
+
+# if __name__ == '__main__':

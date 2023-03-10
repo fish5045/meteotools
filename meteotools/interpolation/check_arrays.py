@@ -74,15 +74,12 @@ def check_destination_nonequal(destination: np.ndarray, origin: np.ndarray):
             f'x_output 位置最小值 {destination_min} 超過資料範圍 {origin_min} ~ {origin_max}')
 
 
-def check_monotonically_increasing(variable):
+def check_monotonically(variable):
     difference = variable[1:] - variable[:-1]
     if (np.all(difference > 0) or np.all(difference < 0)) == False:
         raise ValueError('x_input位置陣列須為單調遞增或單調遞減')
 
 
-def check_dimension(variable, number_of_dim):
-    if len(variable.shape) != number_of_dim:
-        raise DimensionError(f'直角座標資料(car_data)須為{number_of_dim:d}維')
 
 
 ####################### decorators #######################################
@@ -91,7 +88,7 @@ def check_array_and_process_nan_1d_nonequal(func):
     def wrapper(x_input, x_output, data):
         x_output = convert_to_ndarray(x_output)
         x_input = convert_to_ndarray(x_input)
-        check_monotonically_increasing(x_input)
+        check_monotonically(x_input)
         check_destination_nonequal(x_output, x_input)
         x_output = nan_to_numbers(x_output)
 
