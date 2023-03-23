@@ -4,14 +4,15 @@ from os.path import isdir
 import importlib
 import inspect
 
-filters = ["__builtins__","__cached__","__doc__","__file__","__loader__",
-          "__name__","__package__","__spec__","np","pj","__all__",
-          "plt","tm","fc","wrf","os","Path",'cv2','pth'
-]
+filters = ["__builtins__", "__cached__", "__doc__", "__file__", "__loader__",
+           "__name__", "__package__", "__spec__", "np", "pj", "__all__",
+           "plt", "tm", "fc", "wrf", "os", "Path", 'cv2', 'pth'
+           ]
+
 
 def process_py(pysource):
     pypath = pysource.split('/')
-    for p in range(len(pypath)-1,-1,-1):
+    for p in range(len(pypath)-1, -1, -1):
         if pypath[p] == '':
             pypath.remove('')
     if '.' in pypath:
@@ -25,7 +26,8 @@ def process_py(pysource):
             if inspect.ismodule(eval(f'mod.{obj}')) == True:
                 continue
             elif inspect.isfunction(eval(f'mod.{obj}')) == True:
-                var = ', '.join(eval(f'mod.{obj}.__code__.co_varnames')[:eval(f'mod.{obj}.__code__.co_argcount')])
+                var = ', '.join(eval(f'mod.{obj}.__code__.co_varnames')[
+                                :eval(f'mod.{obj}.__code__.co_argcount')])
                 pycontent.append(f'<func> {obj}({var})')
             elif inspect.isclass(eval(f'mod.{obj}')) == True:
                 if Exception in inspect.getmro(eval(f'mod.{obj}')):
@@ -57,12 +59,10 @@ def process_py(pysource):
     return sorted(pycontent)
 
 
-
-
-def process_dir(above_dir,d):
+def process_dir(above_dir, d):
     content = os.listdir(above_dir)
     for file in content:
-        if isdir(above_dir +'/' + file) == True:
+        if isdir(above_dir + '/' + file) == True:
             d[file] = dict()
             process_dir(f'{above_dir}/{file}/', d[file])
         elif f'{above_dir}/{file}'[-3:] == '.py':
@@ -71,11 +71,11 @@ def process_dir(above_dir,d):
             print(f'{above_dir}/{file}/')
 
 
-package_dir = '.'
-package = dict()
+if __name__ == '__main__':
+    package_dir = 'meteotools'
+    package = dict()
 
-process_dir(package_dir,package)
+    process_dir(package_dir, package)
 
-with open('architecture.json','w') as f:
-    f.write(json.dumps(package,indent=4))
-
+    with open('architecture.json', 'w') as f:
+        f.write(json.dumps(package, indent=4))

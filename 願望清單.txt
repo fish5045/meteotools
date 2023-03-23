@@ -1,0 +1,16 @@
+
+cyl功能增加:
+軸對稱率計算
+熱力變數計算
+地轉風計算
+轉風切方向
+smoother
+找RMW
+找最大風速與最小氣壓
+filamentation time
+算zeta div 2種變形
+
+
+
+
+

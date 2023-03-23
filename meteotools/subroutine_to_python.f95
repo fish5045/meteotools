@@ -3,19 +3,19 @@ implicit none
 real*8 :: Z00, Z01, Z10, Z11, tmpZ0, tmpZ1
 integer :: x0, y0, x1, y1
 integer :: k,j,i
-integer,intent(in) :: lenx, leny, N   ! ¤À§Oªí¥Üª½¨¤®y¼Ğx¡By¡Bz¡A¶ê¬W®y¼Ğtheta, r
+integer,intent(in) :: lenx, leny, N   ! åˆ†åˆ¥è¡¨ç¤ºç›´è§’åº§æ¨™xã€yã€zï¼Œåœ“æŸ±åº§æ¨™theta, r
 real*8,intent(in) :: dx,dy
 real*8,intent(in) :: xNewLoc(N), yNewLoc(N), xyData(leny,lenx)
 real*8,intent(out) :: RThetaData(N)
 
 !$omp parallel do private(i,x0,y0,x1,y1,Z00,Z10,Z01,Z11,tmpZ0,tmpZ1)
 do i = 1, N
-    ! ³B²zxNewLoc¬°µL®Ä­Èªº±¡ªp¡Aª½±µ¿é¥XµL®Ä­È¡A¥²¸õ¹L¥H¤Uªº¤º´¡¨BÆJ
+    ! è™•ç†xNewLocç‚ºç„¡æ•ˆå€¼çš„æƒ…æ³ï¼Œç›´æ¥è¼¸å‡ºç„¡æ•ˆå€¼ï¼Œå¿…è·³éä»¥ä¸‹çš„å…§æ’æ­¥é©Ÿ
     if ((xNewLoc(i) == 1.7D308) .or. (yNewLoc(i) == 1.7D308)) then
     RThetaData(i) = 1.7D308
     cycle
     end if
-    !¨M©w¤º´¡ªºindex¡A­Y¬°³Ì«á¤@®æ¡Ax1 = x0 = lenx
+    !æ±ºå®šå…§æ’çš„indexï¼Œè‹¥ç‚ºæœ€å¾Œä¸€æ ¼ï¼Œx1 = x0 = lenx
     x0 = int(xNewLoc(i)/dx)+1
     if ((xNewLoc(i)/dx) == int(xNewLoc(i)/dx)) then
         x1 = x0
@@ -29,7 +29,7 @@ do i = 1, N
         y1 = y0 + 1
     end if
     
-    !¤º´¡­pºâ
+    !å…§æ’è¨ˆç®—
     Z00 = xyData(y0,x0)
     Z10 = xyData(y0,x1)
     Z01 = xyData(y1,x0)
@@ -49,7 +49,7 @@ implicit none
 real*8 :: Z00, Z01, Z10, Z11, tmpZ0, tmpZ1, xtmp, ytmp
 integer :: x0, y0, x1, y1
 integer :: k,i
-integer,intent(in) :: lenx, leny, N, layers   ! ¤À§Oªí¥Üª½¨¤®y¼Ğx¡By¡Bz¡A¶ê¬W®y¼Ğtheta, r
+integer,intent(in) :: lenx, leny, N, layers   ! åˆ†åˆ¥è¡¨ç¤ºç›´è§’åº§æ¨™xã€yã€zï¼Œåœ“æŸ±åº§æ¨™theta, r
 real*8,intent(in) :: dx,dy
 real*8,intent(in) :: xNewLoc(N), yNewLoc(N), xyData(layers,leny,lenx)
 real*8,intent(out) :: RThetaData(layers,N)
@@ -57,12 +57,12 @@ real*8,intent(out) :: RThetaData(layers,N)
 !$omp parallel do private(k,i,x0,y0,x1,y1,Z00,Z10,Z01,Z11,tmpZ0,tmpZ1)
 do k = 1, layers
     do i = 1, N
-        ! ³B²zxNewLoc¬°µL®Ä­Èªº±¡ªp¡Aª½±µ¿é¥XµL®Ä­È¡A¥²¸õ¹L¥H¤Uªº¤º´¡¨BÆJ
+        ! è™•ç†xNewLocç‚ºç„¡æ•ˆå€¼çš„æƒ…æ³ï¼Œç›´æ¥è¼¸å‡ºç„¡æ•ˆå€¼ï¼Œå¿…è·³éä»¥ä¸‹çš„å…§æ’æ­¥é©Ÿ
         if ((xNewLoc(i) == 1.7D308) .or. (yNewLoc(i) == 1.7D308)) then
         RThetaData(k,i) = 1.7D308
         cycle
         end if
-        !¨M©w¤º´¡ªºindex¡A­Y¬°³Ì«á¤@®æ¡Ax1 = x0 = lenx
+        !æ±ºå®šå…§æ’çš„indexï¼Œè‹¥ç‚ºæœ€å¾Œä¸€æ ¼ï¼Œx1 = x0 = lenx
         xtmp = xNewLoc(i)/dx
         ytmp = yNewLoc(i)/dy
         x0 = int(xtmp)+1
@@ -78,7 +78,7 @@ do k = 1, layers
             y1 = y0 + 1
         end if
             
-        !¤º´¡­pºâ
+        !å…§æ’è¨ˆç®—
         Z00 = xyData(k,y0,x0)
         Z10 = xyData(k,y0,x1)
         Z01 = xyData(k,y1,x0)
@@ -100,19 +100,19 @@ implicit none
 real*8 :: Z0, Z1
 integer :: x0, x1
 integer :: i
-integer,intent(in) :: lenx, Nr   ! ¤À§Oªí¥Üª½¨¤®y¼Ğx¡By¡Bz¡A¶ê¬W®y¼Ğtheta, r
+integer,intent(in) :: lenx, Nr   ! åˆ†åˆ¥è¡¨ç¤ºç›´è§’åº§æ¨™xã€yã€zï¼Œåœ“æŸ±åº§æ¨™theta, r
 real*8,intent(in) :: dx
 real*8,intent(in) :: xNewLoc(Nr), xData(lenx)
 real*8,intent(out) :: RThetaData(Nr)
 
 !$omp parallel do private(x0,x1,i,Z0,Z1)
 do i = 1, Nr
-    ! ³B²zxNewLoc¬°µL®Ä­Èªº±¡ªp¡Aª½±µ¿é¥XµL®Ä­È¡A¥²¸õ¹L¥H¤Uªº¤º´¡¨BÆJ
+    ! è™•ç†xNewLocç‚ºç„¡æ•ˆå€¼çš„æƒ…æ³ï¼Œç›´æ¥è¼¸å‡ºç„¡æ•ˆå€¼ï¼Œå¿…è·³éä»¥ä¸‹çš„å…§æ’æ­¥é©Ÿ
     if (xNewLoc(i) == 1.7D308) then
         RThetaData(i) = 1.7D308
         cycle
     end if
-    !¨M©w¤º´¡ªºindex¡A­Y¬°³Ì«á¤@®æ¡Ax1 = x0 = lenx
+    !æ±ºå®šå…§æ’çš„indexï¼Œè‹¥ç‚ºæœ€å¾Œä¸€æ ¼ï¼Œx1 = x0 = lenx
     x0 = int(xNewLoc(i)/dx)+1
     if (xNewLoc(i) == (lenx-1)*dx) then
         x1 = x0
@@ -120,7 +120,7 @@ do i = 1, Nr
         x1 = x0 + 1
     end if
     
-    !¤º´¡­pºâ
+    !å…§æ’è¨ˆç®—
     Z0 = xData(x0)
     Z1 = xData(x1)
     RThetaData(i) = (Z1-Z0)*(xNewLoc(i)/dx-(x0-1))+Z0
@@ -136,7 +136,7 @@ implicit none
 real*8 :: Z0, Z1
 integer :: x0, x1
 integer :: i,k
-integer,intent(in) :: lenx, Nr,layers   ! ¤À§Oªí¥Üª½¨¤®y¼Ğx¡By¡Bz¡A¶ê¬W®y¼Ğtheta, r
+integer,intent(in) :: lenx, Nr,layers   ! åˆ†åˆ¥è¡¨ç¤ºç›´è§’åº§æ¨™xã€yã€zï¼Œåœ“æŸ±åº§æ¨™theta, r
 real*8,intent(in) :: dx
 real*8,intent(in) :: xNewLoc(Nr), xData(layers,lenx)
 real*8,intent(out) :: NewData(layers,Nr)
@@ -145,13 +145,13 @@ real*8,intent(out) :: NewData(layers,Nr)
 !$omp parallel do private(k,x0,x1,i,Z0,Z1)
 do k = 1,layers
     do i = 1, Nr
-        ! ³B²zxNewLoc¬°µL®Ä­Èªº±¡ªp¡Aª½±µ¿é¥XµL®Ä­È¡A¥²¸õ¹L¥H¤Uªº¤º´¡¨BÆJ
+        ! è™•ç†xNewLocç‚ºç„¡æ•ˆå€¼çš„æƒ…æ³ï¼Œç›´æ¥è¼¸å‡ºç„¡æ•ˆå€¼ï¼Œå¿…è·³éä»¥ä¸‹çš„å…§æ’æ­¥é©Ÿ
         if (xNewLoc(i) == 1.7D308) then
             NewData(k,i) = 1.7D308
             cycle
         end if
         
-        !¨M©w¤º´¡ªºindex¡A­Y¬°³Ì«á¤@®æ¡Ax1 = x0 = lenx
+        !æ±ºå®šå…§æ’çš„indexï¼Œè‹¥ç‚ºæœ€å¾Œä¸€æ ¼ï¼Œx1 = x0 = lenx
         x0 = int(xNewLoc(i)/dx)+1
         if (xNewLoc(i) == (lenx-1)*dx) then
             x1 = x0
@@ -159,7 +159,7 @@ do k = 1,layers
             x1 = x0 + 1
         end if
         
-        !¤º´¡­pºâ
+        !å…§æ’è¨ˆç®—
         Z0 = xData(k,x0)
         Z1 = xData(k,x1)
         NewData(k,i) = (Z1-Z0)*(xNewLoc(i)/dx-(x0-1))+Z0
@@ -177,7 +177,7 @@ real*8 :: tmpw00, tmpw10, tmpw01, tmpw11, tmpw0, tmpw1
 real*8 :: xfrac, yfrac, zfrac
 integer :: x0, y0, z0, x1, y1, z1
 integer :: i
-integer,intent(in) :: lenx, leny, lenz, N   ! ¤À§Oªí¥Üª½¨¤®y¼Ğx¡By¡Bz¡A·sªº¤º´¡¦ì¸m¼Æ¥Ø
+integer,intent(in) :: lenx, leny, lenz, N   ! åˆ†åˆ¥è¡¨ç¤ºç›´è§’åº§æ¨™xã€yã€zï¼Œæ–°çš„å…§æ’ä½ç½®æ•¸ç›®
 real*8,intent(in) :: dx, dy, dz
 real*8,intent(in) :: xNewLoc(N),yNewLoc(N),zNewLoc(N), xyzData(lenz, leny, lenx)
 real*8,intent(out) :: NewData(N)
@@ -186,13 +186,13 @@ real*8,intent(out) :: NewData(N)
 !$omp                     tmpw00, tmpw10, tmpw01, tmpw11, tmpw0, tmpw1, xfrac, yfrac, zfrac, &
 !$omp                     x0, y0, z0, x1, y1, z1)
 do i = 1, N
-    ! ³B²zxNewLoc¬°µL®Ä­Èªº±¡ªp¡Aª½±µ¿é¥XµL®Ä­È¡A¥²¸õ¹L¥H¤Uªº¤º´¡¨BÆJ
+    ! è™•ç†xNewLocç‚ºç„¡æ•ˆå€¼çš„æƒ…æ³ï¼Œç›´æ¥è¼¸å‡ºç„¡æ•ˆå€¼ï¼Œå¿…è·³éä»¥ä¸‹çš„å…§æ’æ­¥é©Ÿ
     if (((xNewLoc(i) == 1.7D308) .or. (yNewLoc(i) == 1.7D308)) .or. (zNewLoc(i) == 1.7D308)) then
         NewData(i) = 1.7D308
         cycle
     end if
     
-    !¨M©w¤º´¡ªºindex¡A­Y¬°³Ì«á¤@®æ¡Ax1 = x0 = lenx
+    !æ±ºå®šå…§æ’çš„indexï¼Œè‹¥ç‚ºæœ€å¾Œä¸€æ ¼ï¼Œx1 = x0 = lenx
     x0 = int(xNewLoc(i)/dx)+1
     if (xNewLoc(i) == (lenx-1)*dx) then
         x1 = x0
@@ -212,7 +212,7 @@ do i = 1, N
         z1 = z0 + 1
     end if
     
-    !¤º´¡­pºâ
+    !å…§æ’è¨ˆç®—
     w000 = xyzData(z0,y0,x0)
     w010 = xyzData(z0,y1,x0)
     w001 = xyzData(z0,y0,x1)
@@ -221,7 +221,7 @@ do i = 1, N
     w110 = xyzData(z1,y1,x0)
     w101 = xyzData(z1,y0,x1)
     w111 = xyzData(z1,y1,x1)
-    !¤º´¡Z¤è¦V
+    !å…§æ’Zæ–¹å‘
     zfrac = zNewLoc(i)/dz - (z0-1)
     yfrac = yNewLoc(i)/dy - (y0-1)
     xfrac = xNewLoc(i)/dx - (x0-1)
@@ -245,7 +245,7 @@ real*8 :: tmpw00, tmpw10, tmpw01, tmpw11, tmpw0, tmpw1
 real*8 :: xfrac, yfrac, zfrac
 integer :: x0, y0, z0, x1, y1, z1
 integer :: k,i
-integer,intent(in) :: lenx, leny, lenz, N, layers   ! ¤À§Oªí¥Üª½¨¤®y¼Ğx¡By¡Bz¡A·sªº¤º´¡¦ì¸m¼Æ¥Ø
+integer,intent(in) :: lenx, leny, lenz, N, layers   ! åˆ†åˆ¥è¡¨ç¤ºç›´è§’åº§æ¨™xã€yã€zï¼Œæ–°çš„å…§æ’ä½ç½®æ•¸ç›®
 real*8,intent(in) :: dx, dy, dz
 real*8,intent(in) :: xNewLoc(N),yNewLoc(N),zNewLoc(N), xyzData(layers, lenz, leny, lenx)
 real*8,intent(out) :: NewData(layers, N)
@@ -255,13 +255,13 @@ real*8,intent(out) :: NewData(layers, N)
 !$omp                     x0, y0, z0, x1, y1, z1)
 do k = 1, layers
     do i = 1, N
-        ! ³B²zxNewLoc¬°µL®Ä­Èªº±¡ªp¡Aª½±µ¿é¥XµL®Ä­È¡A¥²¸õ¹L¥H¤Uªº¤º´¡¨BÆJ
+        ! è™•ç†xNewLocç‚ºç„¡æ•ˆå€¼çš„æƒ…æ³ï¼Œç›´æ¥è¼¸å‡ºç„¡æ•ˆå€¼ï¼Œå¿…è·³éä»¥ä¸‹çš„å…§æ’æ­¥é©Ÿ
         if (((xNewLoc(i) == 1.7D308) .or. (yNewLoc(i) == 1.7D308)) .or. (zNewLoc(i) == 1.7D308)) then
             NewData(k,i) = 1.7D308
             cycle
         end if
         
-        !¨M©w¤º´¡ªºindex¡A­Y¬°³Ì«á¤@®æ¡Ax1 = x0 = lenx
+        !æ±ºå®šå…§æ’çš„indexï¼Œè‹¥ç‚ºæœ€å¾Œä¸€æ ¼ï¼Œx1 = x0 = lenx
         x0 = int(xNewLoc(i)/dx)+1
         if (xNewLoc(i) == (lenx-1)*dx) then
             x1 = x0
@@ -281,7 +281,7 @@ do k = 1, layers
             z1 = z0 + 1
         end if
         
-        !¤º´¡­pºâ
+        !å…§æ’è¨ˆç®—
         w000 = xyzData(k,z0,y0,x0)
         w010 = xyzData(k,z0,y1,x0)
         w001 = xyzData(k,z0,y0,x1)
@@ -290,7 +290,7 @@ do k = 1, layers
         w110 = xyzData(k,z1,y1,x0)
         w101 = xyzData(k,z1,y0,x1)
         w111 = xyzData(k,z1,y1,x1)
-        !¤º´¡Z¤è¦V
+        !å…§æ’Zæ–¹å‘
         zfrac = zNewLoc(i)/dz - (z0-1)
         yfrac = yNewLoc(i)/dy - (y0-1)
         xfrac = xNewLoc(i)/dx - (x0-1)
@@ -329,7 +329,7 @@ real*8,intent(out) :: outData(N)
 
 !$omp parallel do private(k,x0,x1,i,Z0,Z1)
 do k = 1, N
-    ! ³B²zxNewLoc¬°µL®Ä­Èªº±¡ªp¡Aª½±µ¿é¥XµL®Ä­È¡A¥²¸õ¹L¥H¤Uªº¤º´¡¨BÆJ
+    ! è™•ç†xNewLocç‚ºç„¡æ•ˆå€¼çš„æƒ…æ³ï¼Œç›´æ¥è¼¸å‡ºç„¡æ•ˆå€¼ï¼Œå¿…è·³éä»¥ä¸‹çš„å…§æ’æ­¥é©Ÿ
     if (x_output(k) == 1.7D308) then
         outData(k) = 1.7D308
         cycle

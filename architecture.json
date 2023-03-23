@@ -1,0 +1,289 @@
+{
+    "build.py": [
+        "<class> task"
+    ],
+    "calc": {
+        "averages.py": [
+            "<func> calc_RZaverage()",
+            "<func> calc_Raverage()",
+            "<func> calc_Zaverage()",
+            "<func> change_axis(dest_axis)",
+            "<func> convert_nan_to_default_value(axis, min_value, max_value)",
+            "<func> pre_process_for_1Daverage(func)",
+            "<func> pre_process_for_2Daverage(func)"
+        ],
+        "check_arrays.py": [
+            "<exception> DimensionError",
+            "<func> change_axis(dest_axis)",
+            "<func> check_array_shape(var_axis, var, axis)",
+            "<func> check_dimension(variable, number_of_dim)",
+            "<func> check_monotonically_increasing(axis, axis_name)",
+            "<func> decorator(caller, _func, kwsyntax)",
+            "<func> pre_post_process_for_differential(dest_axis)",
+            "<func> pre_process_for_1Daverage(func)",
+            "<func> pre_process_for_2Daverage(func)"
+        ],
+        "coordinates.py": [
+            "<class> ndarray",
+            "<exception> InputError",
+            "<exception> UnitError",
+            "<func> Make_cyclinder_coord(centerLocation, r, theta)",
+            "<func> Make_radial_axis(r_start, r_end, dr, in_unit)",
+            "<func> Make_tangential_axis(theta_start, theta_end, dtheta, in_unit)",
+            "<func> Make_vertical_axis(height_start, height_end, dz, in_unit)",
+            "<func> cartesian2cylindrical(dx, dy, cartesian_data, centerLocation, r, theta, xTR, yTR)",
+            "<func> check_dimension(variable, number_of_dim)",
+            "<func> interp2D_fast_layers(dx, dy, xLoc, yLoc, data)",
+            "<func> unit_ratio(in_unit)"
+        ],
+        "differential.py": [
+            "<func> FD2(var, delta, axis)",
+            "<func> FD2_2(var, delta, axis)",
+            "<func> FD2_2_back(var, delta, axis)",
+            "<func> FD2_2_front(var, delta, axis)",
+            "<func> FD2_back(var, delta, axis)",
+            "<func> FD2_front(var, delta, axis)",
+            "<func> difference_FFT(var, delta, axis)",
+            "<func> fftfreq(n, d)",
+            "<func> pre_post_process_for_differential(dest_axis)",
+            "<others> fft",
+            "<others> ifft"
+        ],
+        "math.py": [
+            "<func> change_axis(dest_axis)",
+            "<func> find_root2(a, b, c)",
+            "<func> nine_points_smooth(var, center_weight)",
+            "<func> three_points_smooth()"
+        ],
+        "thermaldynamic.py": [
+            "<exception> InputError",
+            "<float> A",
+            "<float> B",
+            "<float> Cp",
+            "<float> H",
+            "<float> Lv",
+            "<float> P0",
+            "<float> Rd",
+            "<float> T0",
+            "<float> g",
+            "<float> kappa",
+            "<func> P_to_Z(P0, Tv, P)",
+            "<func> Z_to_P(P0, Tv, Z)",
+            "<func> calc_H(Tv)",
+            "<func> calc_T(theta, P)",
+            "<func> calc_Tc(T, P, RH, vapor, qv)",
+            "<func> calc_Td(es, P, qv)",
+            "<func> calc_Tv(T, P, RH, vapor, qv)",
+            "<func> calc_dTdz(T, P, qvs)",
+            "<func> calc_qv(P, T, RH, vapor, Td)",
+            "<func> calc_rho(P, Tv, T, RH, vapor, qv)",
+            "<func> calc_saturated_qv(T, P)",
+            "<func> calc_saturated_vapor(T)",
+            "<func> calc_theta(T, P)",
+            "<func> calc_theta_e(T, theta, P, RH, vapor, qv, Tc)",
+            "<func> calc_theta_es(T, P)",
+            "<func> calc_theta_v(T, P, theta, qv, es, RH, Td, ql)",
+            "<func> calc_vapor(T, RH)",
+            "<func> qv_to_vapor(P, qv)"
+        ],
+        "transformation.py": [
+            "<func> uv_to_wswd(u, v)",
+            "<func> wswd_to_uv(ws, wd)"
+        ],
+        "__init__.py": [
+            "<func> FD2(var, delta, axis)",
+            "<func> FD2_2(var, delta, axis)",
+            "<func> FD2_2_back(var, delta, axis)",
+            "<func> FD2_2_front(var, delta, axis)",
+            "<func> FD2_back(var, delta, axis)",
+            "<func> FD2_front(var, delta, axis)",
+            "<func> Make_cyclinder_coord(centerLocation, r, theta)",
+            "<func> Make_radial_axis(r_start, r_end, dr, in_unit)",
+            "<func> Make_tangential_axis(theta_start, theta_end, dtheta, in_unit)",
+            "<func> Make_vertical_axis(height_start, height_end, dz, in_unit)",
+            "<func> P_to_Z(P0, Tv, P)",
+            "<func> Z_to_P(P0, Tv, Z)",
+            "<func> calc_H(Tv)",
+            "<func> calc_RZaverage()",
+            "<func> calc_Raverage()",
+            "<func> calc_T(theta, P)",
+            "<func> calc_Tc(T, P, RH, vapor, qv)",
+            "<func> calc_Td(es, P, qv)",
+            "<func> calc_Tv(T, P, RH, vapor, qv)",
+            "<func> calc_Zaverage()",
+            "<func> calc_dTdz(T, P, qvs)",
+            "<func> calc_qv(P, T, RH, vapor, Td)",
+            "<func> calc_rho(P, Tv, T, RH, vapor, qv)",
+            "<func> calc_saturated_qv(T, P)",
+            "<func> calc_saturated_vapor(T)",
+            "<func> calc_theta(T, P)",
+            "<func> calc_theta_e(T, theta, P, RH, vapor, qv, Tc)",
+            "<func> calc_theta_es(T, P)",
+            "<func> calc_theta_v(T, P, theta, qv, es, RH, Td, ql)",
+            "<func> calc_vapor(T, RH)",
+            "<func> cartesian2cylindrical(dx, dy, cartesian_data, centerLocation, r, theta, xTR, yTR)",
+            "<func> difference_FFT(var, delta, axis)",
+            "<func> find_root2(a, b, c)",
+            "<func> qv_to_vapor(P, qv)",
+            "<func> uv_to_wswd(u, v)",
+            "<func> wswd_to_uv(ws, wd)"
+        ],
+        "__pycache__": {}
+    },
+    "colors": {
+        "cwbcmaps.py": [
+            "<class> ListedColormap",
+            "<dict> colors",
+            "<dict> lvls",
+            "<func> cmap(name)",
+            "<func> levels(name)"
+        ],
+        "NCL Graphics  Color Table Gallery_files": {},
+        "nclcmaps.py": [
+            "<class> ListedColormap",
+            "<dict> colors",
+            "<func> cmap(name)"
+        ],
+        "__init__.py": [
+            "<func> RGB2colorcode(r, g, b, preview)",
+            "<func> colorcode2RGB(colorcode, preview)",
+            "<int> b",
+            "<int> g",
+            "<int> r"
+        ],
+        "__pycache__": {}
+    },
+    "exceptions.py": [
+        "<exception> DimensionError",
+        "<exception> InputError",
+        "<exception> LengthError",
+        "<exception> UnitError"
+    ],
+    "fileprocess.py": [
+        "<class> struct_time",
+        "<func> get_time_sec(year, month, day, hour, minute, second, offset_seconds)",
+        "<func> get_wrfout_time(year, month, day, hour, minute, second, offset_seconds)",
+        "<func> mkdir(dirpath)",
+        "<others> localtime",
+        "<others> mktime",
+        "<others> strftime"
+    ],
+    "grids": {
+        "cartesian_grid.py": [
+            "<class> cartesian_grid",
+            "<class> gridsystem",
+            "<func> interp2D_fast_layers(dx, dy, xLoc, yLoc, data)",
+            "<func> splev(x, tck, der, ext)",
+            "<func> splrep(x, y, w, xb, xe, k, task, s, t, full_output, per, quiet)",
+            "<func> timer(func)"
+        ],
+        "cylindrical_grid.py": [
+            "<class> cylindrical_grid",
+            "<class> gridsystem",
+            "<func> Make_cyclinder_coord(centerLocation, r, theta)",
+            "<func> interp2D_fast_layers(dx, dy, xLoc, yLoc, data)",
+            "<func> splev(x, tck, der, ext)",
+            "<func> splrep(x, y, w, xb, xe, k, task, s, t, full_output, per, quiet)",
+            "<func> timer(func)"
+        ],
+        "grid_general.py": [
+            "<class> Dataset",
+            "<class> gridsystem"
+        ],
+        "wrfout_grid.py": [
+            "<class> Dataset",
+            "<class> gridsystem",
+            "<class> wrfout_grid",
+            "<func> get_time_sec(year, month, day, hour, minute, second, offset_seconds)",
+            "<func> get_wrfout_time(year, month, day, hour, minute, second, offset_seconds)"
+        ],
+        "__init__.py": [
+            "<class> cartesian_grid",
+            "<class> cylindrical_grid",
+            "<class> wrfout_grid"
+        ],
+        "__pycache__": {}
+    },
+    "grids.py": [
+        "<class> cartesian_grid",
+        "<class> cylindrical_grid",
+        "<class> wrfout_grid",
+        "<list> __path__"
+    ],
+    "interpolation": {
+        "check_arrays.py": [
+            "<exception> DimensionError",
+            "<exception> LengthError",
+            "<func> check_array_and_process_nan_1d(func)",
+            "<func> check_array_and_process_nan_1d_nonequal(func)",
+            "<func> check_array_and_process_nan_2d(func)",
+            "<func> check_array_and_process_nan_3d(func)",
+            "<func> check_array_shape(var1, var2)",
+            "<func> check_destination(destination, dx, length, dimension_name)",
+            "<func> check_destination_nonequal(destination, origin)",
+            "<func> check_monotonically(variable)",
+            "<func> convert_to_ndarray(variable)",
+            "<func> flatten_multi_dimension_array_1d(func)",
+            "<func> flatten_multi_dimension_array_2d(func)",
+            "<func> flatten_multi_dimension_array_3d(func)",
+            "<func> nan_to_numbers(variable)",
+            "<func> numbers_to_nan(variable)"
+        ],
+        "interp_1d.py": [
+            "<class> ndarray",
+            "<exception> DimensionError",
+            "<func> check_array_and_process_nan_1d(func)",
+            "<func> check_array_and_process_nan_1d_nonequal(func)",
+            "<func> flatten_multi_dimension_array_1d(func)",
+            "<func> interp1D(x_input, x_output, data)",
+            "<func> interp1D_fast(dx, xLoc, data)",
+            "<func> interp1D_fast_layers(dx, xLoc, data)",
+            "<func> interp1D_layers(x_input, x_output, data)",
+            "<others> interp1d",
+            "<others> interp1d_fast",
+            "<others> interp1d_fast_layers",
+            "<others> zeros"
+        ],
+        "interp_2d.py": [
+            "<class> ndarray",
+            "<exception> DimensionError",
+            "<func> check_array_and_process_nan_2d(func)",
+            "<func> flatten_multi_dimension_array_2d(func)",
+            "<func> interp2D_fast(dx, dy, xLoc, yLoc, data)",
+            "<func> interp2D_fast_layers(dx, dy, xLoc, yLoc, data)",
+            "<others> interp2d_fast",
+            "<others> interp2d_fast_layers"
+        ],
+        "interp_3d.py": [
+            "<class> ndarray",
+            "<exception> DimensionError",
+            "<func> check_array_and_process_nan_3d(func)",
+            "<func> flatten_multi_dimension_array_3d(func)",
+            "<func> interp3D_fast(dx, dy, dz, xLoc, yLoc, zLoc, data)",
+            "<func> interp3D_fast_layers(dx, dy, dz, xLoc, yLoc, zLoc, data)",
+            "<others> interp3d_fast",
+            "<others> interp3d_fast_layers"
+        ],
+        "__init__.py": [
+            "<func> interp1D(x_input, x_output, data)",
+            "<func> interp1D_fast(dx, xLoc, data)",
+            "<func> interp1D_fast_layers(dx, xLoc, data)",
+            "<func> interp1D_layers(x_input, x_output, data)",
+            "<func> interp2D_fast(dx, dy, xLoc, yLoc, data)",
+            "<func> interp2D_fast_layers(dx, dy, xLoc, yLoc, data)",
+            "<func> interp3D_fast(dx, dy, dz, xLoc, yLoc, zLoc, data)",
+            "<func> interp3D_fast_layers(dx, dy, dz, xLoc, yLoc, zLoc, data)"
+        ],
+        "__pycache__": {}
+    },
+    "old_code": {},
+    "pictureprocess.py": [
+        "<func> movie_make(src_dir, video_name, fps, video_fmt)"
+    ],
+    "tools.py": [
+        "<func> timer(func)",
+        "<others> time"
+    ],
+    "__init__.py": [],
+    "__pycache__": {}
+}

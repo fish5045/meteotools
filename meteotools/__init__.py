@@ -1,15 +1,18 @@
-from time import time
+# version: 0.2.1 2023/3/14
+# 新增calc.grids (尚未測試)
 
-
-def timer(func):
-    def func_wrapper(*args, **kwargs):
-        t0 = time()
-        result = func(*args, **kwargs)
-        t1 = time()
-        print(f'{func.__name__} cost time: {(t1-t0):.5f} (s).')
-        return result
-    return func_wrapper
-
+# version: 0.2 2023/3/10
+# 新增calc.averages
+# 新增calc.check_arrays
+# 新增calc.coordinates
+# 修改 calc.FD2 -> calc.differential
+# 新增calc.math
+# 新增calc.thermaldynamic
+# 新增calc.transformation
+# 新增interpolation.check_arrays
+# 新增interpolation.interp_1d
+# 新增interpolation.interp_2d
+# 新增interpolation.interp_3d
 
 # version: 0.1.3
 # 新增 calc.FD2
