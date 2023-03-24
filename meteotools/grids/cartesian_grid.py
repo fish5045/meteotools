@@ -2,13 +2,14 @@ from scipy.interpolate import splev, splrep
 import numpy as np
 import multiprocessing as mp
 from ..interpolation import interp2D_fast_layers, interp2D_fast
-
+from ..calc import FD2
 
 from .grid_general import gridsystem
 from ..tools import timer
+from .thermaldynamic_calculation import calc_thermaldynamic
 
 
-class cartesian_grid(gridsystem):
+class cartesian_grid(gridsystem, calc_thermaldynamic):
     '''
     圓柱座標網格，3維網格(z, y, x)，z可為壓力或高度座標，x, y為水平直角等間距座標。
     '''
@@ -140,3 +141,84 @@ class cartesian_grid(gridsystem):
         for varname in self.varlist3D:
             exec(
                 f'self.{varname} = np.where(self.hgt_mask,np.nan,self.{varname})')
+
+    # -----------------------------------------------
+    # computation for cartesian coordinates
+
+    def calc_kinetic_energy(self):
+        if all(var in dir(self) for var in ['u', 'v', 'w']):
+            self.kinetic_energy = \
+                (self.u**2 + self.v**2 + self.w**2)/2
+        else:
+            raise AttributeError('須先設定 u, v, w')
+
+    def calc_vorticity_3D(self):
+        if all(var in dir(self) for var in ['u', 'v', 'w']):
+            self.zeta_r = FD2(self.w, self.dy, 1) - FD2(self.v, self.dz, 0)
+            self.zeta_t = FD2(self.v, self.dz, 0) - FD2(self.w, self.dx, 2)
+            self.zeta_z = FD2(self.v, self.dx, 2) - FD2(self.v, self.dy, 1)
+        else:
+            raise AttributeError('須先設定 u, v, w')
+
+    def calc_vorticity_z(self):
+        if 'u' in dir(self) and 'v' in dir(self):
+            self.zeta_z = FD2(self.v, self.dx, 2) - FD2(self.u, self.dy, 1)
+
+    def calc_abs_vorticity_3D(self):
+        if 'zeta_z' not in dir(self):
+            self.calc_vorticity_3D()
+        if 'f' in dir(self):
+            self.abs_zeta_z = self.zeta_z + self.f
+        else:
+            raise AttributeError('須先設定 f')
+
+    def calc_abs_vorticity_z(self):
+        if 'zeta_z' not in dir(self):
+            self.calc_vorticity_z()
+        if 'f' in dir(self):
+            self.abs_zeta_z = self.zeta_z + self.f
+        else:
+            raise AttributeError('須先設定 f')
+
+    def calc_density_factor(self):
+        if 'qv' in dir(self):
+            a = 1 + self.qv/0.622
+        else:
+            raise AttributeError('須先設定 qv')
+
+        if all(var in dir(self) for var in
+               ['qc', 'qr', 'qi', 'qs', 'qg', 'qh']):
+            b = 1 + self.qv + self.qc + self.qr + self.qi + self.qs + self.qg + self.qh
+        elif all(var in dir(self) for var in ['qc', 'qr', 'qi', 'qs', 'qg']):
+            b = 1 + self.qv + self.qc + self.qr + self.qi + self.qs + self.qg
+        elif all(var in dir(self) for var in ['qc', 'qr', 'qi', 'qs']):
+            b = 1 + self.qv + self.qc + self.qr + self.qi + self.qs
+        elif all(var in dir(self) for var in ['qc', 'qr', 'qi']):
+            b = 1 + self.qv + self.qc + self.qr + self.qi
+        elif all(var in dir(self) for var in ['qc', 'qr']):
+            b = 1 + self.qv + self.qc + self.qr
+        elif all(var in dir(self) for var in ['qc']):
+            b = 1 + self.qv + self.qc
+        elif all(var in dir(self) for var in ['qr']):
+            b = 1 + self.qv + self.qr
+        elif all(var in dir(self) for var in []):
+            b = 1
+            print('Warning: 未設定液態固態水物混和比，計算出的Th_rho將與Th_v相同')
+        self.density_factor = a/b
+
+    def calc_density_potential_temperature(self):
+        self.calc_density_factor()
+        if 'Th' not in dir(self):
+            self.calc_theta()   # 須繼承.thermaldynamic_calculation.calc_thermaldynamic
+        self.Th_rho = self.Th * self.density_factor
+
+    def calc_PV(self):
+        if 'Th_rho' not in dir(self):
+            self.calc_density_potential_temperature()
+        if 'abs_zeta_z' not in dir(self):
+            self.calc_abs_vorticity_3D()
+
+        r_part = self.zeta_r * FD2(self.Th_rho, self.dx, 2)
+        t_part = self.zeta_t * FD2(self.Th_rho, self.dy, 1)
+        z_part = self.abs_zeta_z * FD2(self.Th_rho, self.dz, 0)
+        self.PV = (r_part + t_part + z_part) / self.rho

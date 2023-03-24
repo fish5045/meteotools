@@ -116,7 +116,7 @@ def calc_saturated_vapor(T):
     return 611.2*np.exp(17.67*(T-273.15)/(T-273.15+243.5))
 
 
-def calc_vapor(T, RH=1):
+def calc_vapor(T, RH=1.):
     '''
     計算水氣壓
 
@@ -189,15 +189,18 @@ def calc_theta_es(T, P):
     return theta*np.exp(Lv*qv/Cp/T)
 
 
-def calc_Td(es=None, P=None, qv=None):
+def calc_Td(es=None, P=None, qv=None, T=None, RH=None, theta=None):
     '''
     計算露點溫度
-    選擇性輸入必要資訊，es 或 (P, qv)至少輸入其中之一。
+    選擇性輸入必要資訊，es, (P, qv), (T, RH), 或(theta, P, RH)至少輸入其中之一。
     Parameters
     ----------
     es : 水氣壓 (Pa)
     P : 氣壓 (Pa)
     qv : 混和比 (kg/kg)
+    T : 溫度 (K)
+    RH : 相對濕度
+    theta : 位溫 (K)
 
     Returns
     -------
@@ -208,8 +211,13 @@ def calc_Td(es=None, P=None, qv=None):
         if type(es) is type(None):
             if type(None) not in [type(qv), type(P)]:
                 return qv_to_vapor(P, qv)
+            elif type(None) not in [type(T), type(RH)]:
+                return calc_vapor(T, RH)
+            elif type(None) not in [type(theta), type(P), type(RH)]:
+                T = calc_T(theta, P)
+                return calc_vapor(T, RH)
             else:
-                raise InputError('需輸入es 或 (P, qv)')
+                raise InputError('需輸入es, (P, qv), (T, RH), 或(theta, P, RH)')
         return es
 
     es = check_es(es)
@@ -332,7 +340,7 @@ def calc_Tv(T, P=None, RH=None, vapor=None, qv=None):
 def calc_rho(P, Tv=None, T=None, RH=None, vapor=None, qv=None):
     '''
     計算空氣密度，可為float或陣列。
-    選擇性輸入必要資訊，(P,RH) 或 (P,vapor) 或 qv至少輸入其中之一。
+    選擇性輸入必要資訊，Tv, (T,RH) 或 (T,vapor) 或 qv至少輸入其中之一。
 
     Parameters
     ----------
