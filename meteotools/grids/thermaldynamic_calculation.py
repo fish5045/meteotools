@@ -1,7 +1,7 @@
 from ..calc import calc_Tv, calc_rho, calc_theta, \
     calc_T, calc_saturated_vapor, calc_vapor, calc_saturated_qv, qv_to_vapor, \
     calc_theta_es, calc_Td, calc_qv, calc_theta_v, calc_Tv, calc_rho, \
-    calc_Tc, calc_theta_e, calc_dTdz
+    calc_Tc, calc_theta_e, calc_dTdz, calc_RH
 
 
 class calc_thermaldynamic:
@@ -100,22 +100,34 @@ class calc_thermaldynamic:
             self.calc_T()
         if 'qv' not in dir(self):
             self.calc_qv()
-        self.Tc = calc_Tc(self.T, qv=self.qv)
+        if 'p' in dir(self):
+            self.Tc = calc_Tc(self.T, self.p, qv=self.qv)
+        else:
+            raise AttributeError('須先設定p')
 
     def calc_theta_e(self):
         if 'Th' not in dir(self):
-            self.calc_T()
+            self.calc_theta()
         if 'qv' not in dir(self):
             self.calc_qv()
         if 'Tc' not in dir(self):
             self.calc_Tc()
-        self.Th_e = calc_theta_e(self.Th, qv=self.qv, Tc=self.Tc)
+        self.Th_e = calc_theta_e(theta=self.Th, qv=self.qv, Tc=self.Tc)
 
     def calc_moist_dTdz(self):
         if 'T' not in dir(self):
             self.calc_T()
-        if 'p' in dir(self):
+        if 'p' in dir(self) and 'qvs' in dir(self):
+            self.moist_dTdz = calc_dTdz(qvs=self.qvs)
+        else:
             self.moist_dTdz = calc_dTdz(T=self.T, P=self.p)
 
     def calc_dry_dTdz(self):
         self.dry_dTdz = calc_dTdz()
+
+    def calc_RH(self):
+        if 'T' not in dir(self):
+            self.calc_T()
+        if 'vapor' not in dir(self):
+            self.calc_vapor()
+        self.RH = calc_RH(T=self.T, vapor=self.vapor)

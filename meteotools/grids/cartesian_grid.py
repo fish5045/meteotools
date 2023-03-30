@@ -1,5 +1,6 @@
 from scipy.interpolate import splev, splrep
 import numpy as np
+import wrf
 import multiprocessing as mp
 from ..interpolation import interp2D_fast_layers, interp2D_fast
 from ..calc import FD2
@@ -24,15 +25,25 @@ class cartesian_grid(gridsystem, calc_thermaldynamic):
         self.varlist3D = []
         self.varlist2D = []
 
+    def make_center_loc(self):
+        self.center_xloc = (self.x[0] + self.x[-1])/2
+        self.center_yloc = (self.y[0] + self.y[-1])/2
+
     def create_coord(self):
         self.x = np.arange(0., self.Nx*self.dx, self.dx)
         self.y = np.arange(0., self.Ny*self.dy, self.dy)
         self.z = np.arange(0, self.Nz*self.dz, self.dz) + self.z_start
+        self.make_center_loc()
         self.xx, self.yy = np.meshgrid(self.x, self.y)
-        self.center_xloc = (self.x[0] + self.x[-1])/2
-        self.center_yloc = (self.y[0] + self.y[-1])/2
         self.dis_from_center = (
             self.xx-self.center_xloc)**2 + (self.yy-self.center_yloc)**2
+
+        self.set_coord_meta('z', 'z', self.z, unit='m',
+                            description='Z coordinate')
+        self.set_coord_meta('y', 'y', self.y, unit='m',
+                            description='Y coordinate')
+        self.set_coord_meta('x', 'x', self.x, unit='m',
+                            description='X coordinate')
 
     def set_horizontal_location(self, offset_x, offset_y):
         '''
@@ -40,6 +51,8 @@ class cartesian_grid(gridsystem, calc_thermaldynamic):
         來源資料可能是直角坐標或是wrf座標，設定此座標系的中心要在來源座標系的哪裡
         (offset_x, offset_y)，產生出此直角坐標系在來源座標系內的x, y位置，供內插使用
         '''
+        if 'center_xloc' not in dir(self) or 'center_yloc' not in dir(self):
+            self.make_center_loc()
         self.hinterp_target_xloc = self.x + offset_x - self.center_xloc
         self.hinterp_target_yloc = self.y + offset_y - self.center_yloc
         self.hinterp_target_xxloc, self.hinterp_target_yyloc = \
@@ -83,10 +96,18 @@ class cartesian_grid(gridsystem, calc_thermaldynamic):
         # 3D平行化垂直內插
         group = [[vardict[varname], src_vertical, self.z]
                  for varname in varlist3D_curr]
+
+        tmp = []
+        for var, vertical, specific_z in group:
+            tmp.append(np.array(wrf.interplevel(
+                var, vertical, specific_z)))
+
+        '''
         pool = mp.Pool(self.interp_cpus)
         tmp = pool.starmap(self.spline, group)
         pool.close()
         pool.join()
+        '''
 
         # 3D水平內插
         for idx, varname in enumerate(varlist3D_curr):
@@ -142,8 +163,15 @@ class cartesian_grid(gridsystem, calc_thermaldynamic):
             exec(
                 f'self.{varname} = np.where(self.hgt_mask,np.nan,self.{varname})')
 
-    # -----------------------------------------------
-    # computation for cartesian coordinates
+    # ----------------------------------------------------------------- #
+    # computation for kinetic variables and PV (cartesian coordinates)  #
+    # ----------------------------------------------------------------- #
+
+    def calc_wind_speed(self):
+        if 'u' in dir(self) and 'v' in dir(self):
+            self.wind_speed = (self.u**2 + self.v**2)**0.5
+        else:
+            raise AttributeError('須先設定 u, v')
 
     def calc_kinetic_energy(self):
         if all(var in dir(self) for var in ['u', 'v', 'w']):
@@ -156,13 +184,9 @@ class cartesian_grid(gridsystem, calc_thermaldynamic):
         if all(var in dir(self) for var in ['u', 'v', 'w']):
             self.zeta_r = FD2(self.w, self.dy, 1) - FD2(self.v, self.dz, 0)
             self.zeta_t = FD2(self.v, self.dz, 0) - FD2(self.w, self.dx, 2)
-            self.zeta_z = FD2(self.v, self.dx, 2) - FD2(self.v, self.dy, 1)
+            self.zeta_z = FD2(self.v, self.dx, 2) - FD2(self.u, self.dy, 1)
         else:
             raise AttributeError('須先設定 u, v, w')
-
-    def calc_vorticity_z(self):
-        if 'u' in dir(self) and 'v' in dir(self):
-            self.zeta_z = FD2(self.v, self.dx, 2) - FD2(self.u, self.dy, 1)
 
     def calc_abs_vorticity_3D(self):
         if 'zeta_z' not in dir(self):
@@ -172,13 +196,20 @@ class cartesian_grid(gridsystem, calc_thermaldynamic):
         else:
             raise AttributeError('須先設定 f')
 
-    def calc_abs_vorticity_z(self):
-        if 'zeta_z' not in dir(self):
-            self.calc_vorticity_z()
-        if 'f' in dir(self):
-            self.abs_zeta_z = self.zeta_z + self.f
+    def calc_divergence_hori(self):
+        if 'u' in dir(self) and 'v' in dir(self):
+            self.div_hori = FD2(self.u, self.dx, 2) \
+                + FD2(self.v, self.dy, 1)
         else:
-            raise AttributeError('須先設定 f')
+            raise AttributeError('須先設定 u, v')
+
+    def calc_divergence(self):
+        if all(var in dir(self) for var in ['u', 'v', 'w']):
+            self.div = FD2(self.u, self.dx, 2) \
+                + FD2(self.v, self.dy, 1) \
+                + FD2(self.w, self.dz, 0)
+        else:
+            raise AttributeError('須先設定 u, v, w')
 
     def calc_density_factor(self):
         if 'qv' in dir(self):
@@ -217,8 +248,52 @@ class cartesian_grid(gridsystem, calc_thermaldynamic):
             self.calc_density_potential_temperature()
         if 'abs_zeta_z' not in dir(self):
             self.calc_abs_vorticity_3D()
+        if 'rho' not in dir(self):
+            self.calc_rho()
 
         r_part = self.zeta_r * FD2(self.Th_rho, self.dx, 2)
         t_part = self.zeta_t * FD2(self.Th_rho, self.dy, 1)
         z_part = self.abs_zeta_z * FD2(self.Th_rho, self.dz, 0)
         self.PV = (r_part + t_part + z_part) / self.rho
+
+    # ----------------------------------------------------------------- #
+    # computation for filamentation (cartesian coordinates)             #
+    # ----------------------------------------------------------------- #
+
+    def calc_vorticity_z(self):
+        if 'u' in dir(self) and 'v' in dir(self):
+            self.zeta_z = FD2(self.v, self.dx, 2) - FD2(self.u, self.dy, 1)
+        else:
+            raise AttributeError('須先設定 u, v')
+
+    def calc_abs_vorticity_z(self):
+        if 'zeta_z' not in dir(self):
+            self.calc_vorticity_z()
+        if 'f' in dir(self):
+            self.abs_zeta_z = self.zeta_z + self.f
+        else:
+            raise AttributeError('須先設定 f')
+
+    def calc_deformation(self):
+        if 'u' in dir(self) and 'v' in dir(self):
+            self.shear_deform = FD2(self.u, self.dx, 2) \
+                - FD2(self.v, self.dy, 1)
+            self.stretch_deform = FD2(self.v, self.dx, 2) \
+                + FD2(self.u, self.dy, 1)
+        else:
+            raise AttributeError('須先設定 u, v')
+
+    def calc_filamentation(self):
+        if 'shear_deform' not in dir(self) or 'stretch_deform' not in dir(self):
+            self.calc_deformation()
+        if 'zeta_z' not in dir(self):
+            self.calc_vorticity_z()
+
+        self.filamentation_time = 2*(self.shear_deform**2
+                                     + self.stretch_deform**2
+                                     - self.zeta_z**2)**(-1/2)
+        strain_region = \
+            self.shear_deform**2 + self.stretch_deform**2 > self.zeta_z**2
+
+        self.filamentation_time = \
+            np.where(strain_region, self.filamentation_time, np.inf)

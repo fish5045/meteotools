@@ -5,6 +5,7 @@
 
 from time import mktime, strftime, struct_time, localtime
 from pathlib import Path
+import json
 
 
 def get_wrfout_time(year, month, day, hour, minute, second, offset_seconds):
@@ -31,3 +32,9 @@ def mkdir(dirpath):
     可給一連串路徑建立一串資料夾，如 "test/a/b/c"
     '''
     Path(dirpath).mkdir(parents=True, exist_ok=True)
+
+
+def load_settings(file_path_and_name):
+    with open(file_path_and_name, 'r') as f:
+        settings = json.load(f)
+    return settings

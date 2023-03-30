@@ -364,10 +364,10 @@ def calc_rho(P, Tv=None, T=None, RH=None, vapor=None, qv=None):
     return P/(Rd*Tv)
 
 
-def calc_Tc(T, P=None, RH=None, vapor=None, qv=None):
+def calc_Tc(T, P, RH=None, vapor=None, qv=None):
     '''
     計算凝結溫度condensation temperature，可為float或陣列。
-    選擇性輸入必要資訊，qv 或 (RH,P) 或 (vapor,P)至少輸入其中之一。
+    選擇性輸入必要資訊，qv, RH 或 vapor至少輸入其中之一。
     Parameters
     ----------
     T : 溫度 (Pa)
@@ -382,12 +382,13 @@ def calc_Tc(T, P=None, RH=None, vapor=None, qv=None):
     '''
     def check_qv(qv):
         if type(qv) is type(None):
-            if type(None) not in [type(RH), type(P)]:
+            if type(None) not in [type(RH)]:
                 qv = calc_qv(P=P, T=T, RH=RH)
-            elif type(None) not in [type(vapor), type(P)]:
+            elif type(None) not in [type(vapor)]:
                 qv = calc_qv(P=P, vapor=vapor)
             else:
-                raise InputError('qv 或 (RH,P) 或 (vapor,P)須至少輸入一者')
+                raise InputError('qv, RH 或 vapor須至少輸入一者')
+        return qv
 
     qv = check_qv(qv)
 
@@ -401,11 +402,12 @@ def calc_Tc(T, P=None, RH=None, vapor=None, qv=None):
     return Tc
 
 
-def calc_theta_e(T, theta=None, P=None, RH=None, vapor=None, qv=None, Tc=None):
+def calc_theta_e(
+        T=None, theta=None, P=None, RH=None, vapor=None, qv=None, Tc=None):
     '''
     計算相當位溫，可為float或陣列。
-    選擇性輸入必要資訊，theta 或 P至少輸入其中之一。
-    選擇性輸入必要資訊，qv 或 (RH,P) 或 (vapor,P)至少輸入其中之一。
+    選擇性輸入必要資訊，theta 或 (T,P)至少輸入其中之一。
+    選擇性輸入必要資訊，qv 或 (T,RH,P) 或 (vapor,P)至少輸入其中之一。
     選擇性輸入必要資訊，Tc 或 P至少輸入其中之一。
     Parameters
     ----------
@@ -423,20 +425,20 @@ def calc_theta_e(T, theta=None, P=None, RH=None, vapor=None, qv=None, Tc=None):
     '''
     def check_theta(theta):
         if type(theta) is type(None):
-            if type(P) is not type(None):
+            if type(None) not in [type(T), type(P)]:
                 theta = calc_theta(T, P)
             else:
-                raise InputError('theta 或 P須至少輸入一者')
+                raise InputError('theta 或 (T,P)須至少輸入一者')
         return theta
 
     def check_qv(qv):
         if type(qv) is type(None):
-            if type(None) not in [type(RH), type(P)]:
+            if type(None) not in [type(T), type(RH), type(P)]:
                 qv = calc_qv(P, T, RH=RH)
             elif type(None) not in [type(vapor), type(P)]:
                 qv = calc_qv(P, vapor=vapor)
             else:
-                raise InputError('qv 或 (RH,P) 或 (vapor,P)須至少輸入一者')
+                raise InputError('qv 或 (T,RH,P) 或 (vapor,P)須至少輸入一者')
         return qv
 
     def check_Tc(Tc):
@@ -485,3 +487,47 @@ def calc_dTdz(T=None, P=None, qvs=None):
     else:
         qvs = check_qvs(qvs)
         return -g*((1 + Lv*qvs/Rd/T) / (Cp + Lv**2*qvs*0.622/Rd/T**2))
+
+
+def calc_RH(T=None, Th=None, vapor=None, qv=None, P=None, Td=None):
+    '''
+    計算相對濕度，可為float或陣列。
+    選擇性輸入必要資訊，(theta, P) 或 T至少輸入其中之一。
+    選擇性輸入必要資訊，vapor, Td, 或 (P, qv)至少輸入其中之一。
+
+    Parameters
+    ----------
+    T : 溫度 (K)
+    Th : 位溫(K)
+    vapor : 水氣壓 (Pa)
+    qv : 混和比 (kg,kg)
+    P : 壓力 (Pa)
+    Td : 露點溫度 (K)
+
+    Returns
+    -------
+    相對濕度 (1)
+    '''
+    def check_T(T):
+        if type(T) is type(None):
+            if type(None) not in [type(Th), type(P)]:
+                T = calc_T(Th, P)
+            else:
+                raise InputError('需輸入(theta, P) 或 T')
+        return T
+
+    def check_vapor(vapor):
+        if type(vapor) is type(None):
+            if type(None) not in [type(qv), type(P)]:
+                vapor = qv_to_vapor(P, qv)
+            elif type(None) is not type(Td):
+                vapor = calc_vapor(Td)
+            else:
+                raise InputError('需輸入vapor, Td, 或 (P, qv)')
+        return vapor
+
+    T = check_T(T)
+    vapor = check_vapor(vapor)
+    vapor_s = calc_saturated_vapor(T)
+
+    return vapor/vapor_s

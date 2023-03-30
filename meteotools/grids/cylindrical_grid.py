@@ -4,8 +4,9 @@ import wrf
 from scipy.interpolate import splev, splrep
 
 from ..interpolation import interp2D_fast_layers, interp2D_fast
-from ..calc import Make_cyclinder_coord, FD2
+from ..calc import Make_cyclinder_coord, FD2, calc_RZaverage
 from ..tools import timer
+from ..exceptions import DimensionError
 from .grid_general import gridsystem
 from .thermaldynamic_calculation import calc_thermaldynamic
 
@@ -178,8 +179,19 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
             exec(
                 f'self.{varname} = np.where(self.hgt_mask,np.nan,self.{varname})')
 
-    # ----------------------------------------------------
-    # computation for cylinerical coordinates
+    # ------------------------------------------------------------------- #
+    # computation  (cylindrical coordinates only)                         #
+    # ------------------------------------------------------------------- #
+
+    def calc_axisymmetric_asymmetric(self, varname):
+        if varname not in dir(self):
+            raise AttributeError(f'沒有名稱為 {varname} 的變數')
+        if eval(f'len(self.{varname}.shape)') != 3:
+            raise DimensionError('陣列維度需為3 (z, theta, r)')
+        exec(f'self.sym_{varname} = np.nanmean(self.{varname},axis=1)')
+        exec(
+            f'self.asy_{varname} = self.{varname} - self.sym_{varname}.reshape(self.Nz, 1, self.Nr)')
+
     def calc_vr_vt(self):
         if 'u' in dir(self) and 'v' in dir(self):
             theta = self.theta.reshape(1, -1, 1)
@@ -191,10 +203,56 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
     def calc_fric_vr_vt(self):
         if 'fric_u' in dir(self) and 'fric_v' in dir(self):
             theta = self.theta.reshape(1, -1, 1)
-            self.fric_vr = self.fric_v*np.sin(theta) + self.fric_u*np.cos(theta)
-            self.fric_vt = self.fric_v*np.cos(theta) - self.fric_u*np.sin(theta)
+            self.fric_vr = self.fric_v*np.sin(
+                theta) + self.fric_u*np.cos(theta)
+            self.fric_vt = self.fric_v*np.cos(
+                theta) - self.fric_u*np.sin(theta)
         else:
             raise AttributeError('須先設定 fric_u, fric_v')
+
+    def find_rmw_and_speed(self):
+        if 'sym_vt' not in dir(self):
+            if 'vt' not in dir(self):
+                self.calc_vr_vt()
+            self.calc_axisymmetric_asymmetric('vt')
+        if 'sym_wind_speed' not in dir(self):
+            if 'wind_speed' not in dir(self):
+                self.calc_wind_speed()
+            self.calc_axisymmetric_asymmetric('wind_speed')
+
+        max_wind_r_idx = np.nanargmax(self.sym_wind_speed, axis=1)
+        self.RMW = self.r[max_wind_r_idx]
+        self.wspd_max_RMW = self.sym_wind_speed[np.arange(
+            self.Nz), max_wind_r_idx]
+        self.vt_max_RMW = self.sym_vt[np.arange(self.Nz), max_wind_r_idx]
+
+    # ------------------------------------------------------------------- #
+    # computation for agradient force (cylindrical coordinates only)      #
+    # ------------------------------------------------------------------- #
+    def calc_agradient_force(self):
+        if 'vt' not in dir(self):
+            self.calc_vr_vt()
+        if 'rho' not in dir(self):
+            self.calc_rho()
+        if 'p' in dir(self) and 'f' in dir(self):
+            self.coriolis_force = self.f*self.vt
+            self.centrifugal_force = self.vt**2/self.r
+            self.radial_PG_force = -FD2(self.p, self.dr, axis=2)/self.rho
+            self.agradient_force = self.coriolis_force \
+                + self.centrifugal_force \
+                + self.radial_PG_force
+        else:
+            raise AttributeError('須先設定 p, f')
+
+    # ------------------------------------------------------------------- #
+    # computation for kinetic variables and PV (cylindrical coordinates)  #
+    # ------------------------------------------------------------------- #
+
+    def calc_wind_speed(self):
+        if 'u' in dir(self) and 'v' in dir(self):
+            self.wind_speed = (self.u**2 + self.v**2)**0.5
+        else:
+            raise AttributeError('須先設定 u, v')
 
     def calc_kinetic_energy(self):
         if 'vr' not in dir(self) or 'vt' not in dir(self):
@@ -218,12 +276,6 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
         else:
             raise AttributeError('須先設定 w')
 
-    def calc_vorticity_z(self):
-        if 'vr' not in dir(self) or 'vt' not in dir(self):
-            self.calc_vr_vt()
-        self.zeta_z = FD2(self.vt*self.r, self.dr, 2)/self.r \
-            - FD2(self.vr, self.dtheta, 1)/self.r
-
     def calc_abs_vorticity_3D(self):
         if 'zeta_z' not in dir(self):
             self.calc_vorticity_3D()
@@ -232,13 +284,24 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
         else:
             raise AttributeError('須先設定 f')
 
-    def calc_abs_vorticity_z(self):
-        if 'zeta_z' not in dir(self):
-            self.calc_vorticity_z()
-        if 'f' in dir(self):
-            self.abs_zeta_z = self.zeta_z + self.f
+    def calc_divergence_hori(self):
+        if 'vr' not in dir(self) or 'vt' not in dir(self):
+            self.calc_vr_vt()
+
+        self.div_hori = FD2(self.r*self.vr, self.dr, 2)/self.r \
+            + FD2(self.vt, self.dtheta, 1)/self.r \
+
+
+    def calc_divergence(self):
+        if 'vr' not in dir(self) or 'vt' not in dir(self):
+            self.calc_vr_vt()
+
+        if 'w' in dir(self):
+            self.div = FD2(self.r*self.vr, self.dr, 2)/self.r \
+                + FD2(self.vt, self.dtheta, 1)/self.r \
+                + FD2(self.w, self.dz, 0)
         else:
-            raise AttributeError('須先設定 f')
+            raise AttributeError('須先設定 w')
 
     def calc_density_factor(self):
         if 'qv' in dir(self):
@@ -246,7 +309,8 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
         else:
             raise AttributeError('須先設定 qv')
 
-        if all(var in dir(self) for var in ['qc', 'qr', 'qi', 'qs', 'qg', 'qh']):
+        if all(var in dir(self) for var in
+               ['qc', 'qr', 'qi', 'qs', 'qg', 'qh']):
             b = 1 + self.qv + self.qc + self.qr + self.qi + self.qs + self.qg + self.qh
         elif all(var in dir(self) for var in ['qc', 'qr', 'qi', 'qs', 'qg']):
             b = 1 + self.qv + self.qc + self.qr + self.qi + self.qs + self.qg
@@ -271,17 +335,57 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
             self.calc_theta()   # 須繼承.thermaldynamic_calculation.calc_thermaldynamic
         self.Th_rho = self.Th * self.density_factor
 
-
     def calc_PV(self):
         if 'Th_rho' not in dir(self):
             self.calc_density_potential_temperature()
         if 'abs_zeta_z' not in dir(self):
             self.calc_abs_vorticity_3D()
+        if 'rho' not in dir(self):
+            self.calc_rho()
 
         r_part = self.zeta_r * FD2(self.Th_rho, self.dr, 2)
         t_part = self.zeta_t * FD2(self.Th_rho,
-                                    self.dtheta, 1) / self.r
+                                   self.dtheta, 1) / self.r
         z_part = self.abs_zeta_z * FD2(self.Th_rho, self.dz, 0)
         self.PV = (r_part + t_part + z_part) / self.rho
 
-# ------------------------------------
+    # ----------------------------------------------------------------- #
+    # computation for filamentation (cylindrical coordinates)           #
+    # ----------------------------------------------------------------- #
+
+    def calc_vorticity_z(self):
+        if 'vr' not in dir(self) or 'vt' not in dir(self):
+            self.calc_vr_vt()
+        self.zeta_z = FD2(self.vt*self.r, self.dr, 2)/self.r \
+            - FD2(self.vr, self.dtheta, 1)/self.r
+
+    def calc_abs_vorticity_z(self):
+        if 'zeta_z' not in dir(self):
+            self.calc_vorticity_z()
+        if 'f' in dir(self):
+            self.abs_zeta_z = self.zeta_z + self.f
+        else:
+            raise AttributeError('須先設定 f')
+
+    def calc_deformation(self):
+        if 'vr' not in dir(self) or 'vt' not in dir(self):
+            self.calc_vr_vt()
+        self.shear_deform = FD2(self.vr, self.dr, 2) - self.vr/self.r \
+            - FD2(self.vt, self.dtheta, 1)/self.r
+        self.stretch_deform = FD2(self.vt, self.dr, 2) - self.vt/self.r \
+            + FD2(self.vr, self.dtheta, 1)/self.r
+
+    def calc_filamentation(self):
+        if 'shear_deform' not in dir(self) or 'stretch_deform' not in dir(self):
+            self.calc_deformation()
+        if 'zeta_z' not in dir(self):
+            self.calc_vorticity_z()
+
+        self.filamentation_time = 2*(self.shear_deform**2
+                                     + self.stretch_deform**2
+                                     - self.zeta_z**2)**(-1/2)
+        self.strain_region = \
+            self.shear_deform**2 + self.stretch_deform**2 > self.zeta_z**2
+
+        self.filamentation_time = \
+            np.where(self.strain_region, self.filamentation_time, np.inf)

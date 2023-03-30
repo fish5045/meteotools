@@ -5,6 +5,7 @@ from .grid_general import gridsystem
 from ..fileprocess import get_time_sec, get_wrfout_time
 from ..tools import timer
 
+
 class wrfout_grid(gridsystem):
     '''
     wrfout 的網格系統，3維網格(z, y, x)，x, y為等間距的直角水平座標，z為eta座標
@@ -43,7 +44,7 @@ class wrfout_grid(gridsystem):
         '''
         self.offset = second
         self.set_wrfout_fname()
-    
+
     def correct_map_scale(self):
         self.ua *= self.MAPFAC_MX
         self.va *= self.MAPFAC_MY
@@ -67,6 +68,8 @@ class wrfout_grid(gridsystem):
                 try:
                     exec(
                         f'self.{var} = np.squeeze(np.array(wrf.getvar(filenc,"{var}")))')
+                    if var == 'pressure':
+                        self.pressure *= 100  # hPa -> Pa
                     if var == 'P_HYD':
                         self.pressure = self.P_HYD
                         self.sfc_pressure = self.pressure[0]
