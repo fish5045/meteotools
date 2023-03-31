@@ -183,14 +183,82 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
     # computation  (cylindrical coordinates only)                         #
     # ------------------------------------------------------------------- #
 
-    def calc_axisymmetric_asymmetric(self, varname):
+    def calc_axisymmetry(self,  varname):
+        '''
+        取指定變數的軸對稱率，指定變數為var，輸出名稱為axisymmetry_var
+        若指定變數為3維，假設其維度為(z, theta, r)，輸出2維(z, r)的軸對稱率
+        若指定變數為2維，假設其維度為(theta, r)，輸出1維(r)的軸對稱率
+        若指定變數為1維，假設其維度為(theta)，輸出單一軸對稱率值
+        '''
         if varname not in dir(self):
             raise AttributeError(f'沒有名稱為 {varname} 的變數')
-        if eval(f'len(self.{varname}.shape)') != 3:
-            raise DimensionError('陣列維度需為3 (z, theta, r)')
-        exec(f'self.sym_{varname} = np.nanmean(self.{varname},axis=1)')
-        exec(
-            f'self.asy_{varname} = self.{varname} - self.sym_{varname}.reshape(self.Nz, 1, self.Nr)')
+
+        self.calc_axisymmetric_asymmetric(varname)
+        if eval(f'len(self.{varname}.shape)') == 3:  # (z, theta, r)
+            exec(
+                f'self.axisymmetry_{varname} = self.sym_{varname}**2' +
+                f'/(self.sym_{varname}**2 + np.nansum(self.asy_{varname}**2,axis=1)'
+                + f'*self.dtheta/2/np.pi)')
+        elif eval(f'len(self.{varname}.shape)') == 2:  # (theta, r)
+            exec(
+                f'self.axisymmetry_{varname} = self.sym_{varname}**2' +
+                f'/(self.sym_{varname}**2 + np.nansum(self.asy_{varname}**2,axis=0)'
+                + f'*self.dtheta/2/np.pi)')
+        elif eval(f'len(self.{varname}.shape)') == 1:  # (theta, r)
+            exec(
+                f'self.axisymmetry_{varname} = self.sym_{varname}**2' +
+                f'/(self.sym_{varname}**2 + np.nansum(self.asy_{varname}**2)'
+                + f'*self.dtheta/2/np.pi)')
+
+    def calc_axisymmetric_asymmetric(self, varname):
+        '''
+        計算指定變數(var)的軸對稱平均(sym_var)與非對稱值(asy_var)
+        若指定變數為3維，假設其維度為(z, theta, r)，輸出2維(z, r)的sym_var與
+        3維(z, theta, r)的asy_var
+        若指定變數為2維，假設其維度為(theta, r)，輸出1維(r)的sym_var率與
+        1維(theta, r)的asy_var
+        若指定變數為1維，假設其維度為(theta)，輸出單一sym_var值與1維(theta)的asy_var
+        '''
+
+        if varname not in dir(self):
+            raise AttributeError(f'沒有名稱為 {varname} 的變數')
+        if eval(f'len(self.{varname}.shape)') == 3:  # (z, theta, r)
+            exec(f'self.sym_{varname} = np.nanmean(self.{varname},axis=1)')
+            exec(
+                f'self.asy_{varname} = self.{varname} - self.sym_{varname}.reshape(self.Nz, 1, self.Nr)')
+        elif eval(f'len(self.{varname}.shape)') == 2:  # (theta, r)
+            exec(f'self.sym_{varname} = np.nanmean(self.{varname},axis=0)')
+            exec(f'self.asy_{varname} = self.{varname} - self.sym_{varname}')
+        elif eval(f'len(self.{varname}.shape)') == 1:  # (theta)
+            exec(f'self.sym_{varname} = np.nanmean(self.{varname})')
+            exec(f'self.asy_{varname} = self.{varname} - self.sym_{varname}')
+
+    def rotate_to_shear_direction(
+            self, varname, direction, unit='rad'):
+        '''
+        將指定變數(var)依照風切方向旋轉至螢幕正上方為風切方向的陣列(shear_relative_var)
+        若指定變數為3維(z, theta, r)，沿第1維(theta)旋轉
+        若指定變數為2維(theta, r)，沿第0維(theta)旋轉
+        若指定變數為1維(theta)，沿第0維(theta)旋轉
+        Parameters
+        ----------
+        varname : 欲旋轉變數之名稱
+        direction : 風切方位角
+        unit : 單位，預設為rad，可變更為rad
+        '''
+        if unit == 'deg':
+            direction = np.deg2rad(direction)
+        rotate_idx = int(direction/self.dtheta)
+        print(rotate_idx)
+        if eval(f'len(self.{varname}.shape)') == 3:  # (z, theta, r)
+            exec(f'self.shear_relative_{varname} = ' +
+                 f'np.roll(self.{varname},{rotate_idx}, axis=1)')
+        elif eval(f'len(self.{varname}.shape)') == 2:  # (theta, r)
+            exec(f'self.shear_relative_{varname} = ' +
+                 f'np.roll(self.{varname},{rotate_idx}, axis=0)')
+        elif eval(f'len(self.{varname}.shape)') == 1:  # (theta)
+            exec(f'self.shear_relative_{varname} = ' +
+                 f'np.roll(self.{varname},{rotate_idx}, axis=0)')
 
     def calc_vr_vt(self):
         if 'u' in dir(self) and 'v' in dir(self):

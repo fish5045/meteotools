@@ -5,4 +5,4 @@ subroutine_to_python.f95.backup
 *.so
 small_test.py
 data
-./data/*
+data/*

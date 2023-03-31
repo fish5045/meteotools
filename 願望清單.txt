@@ -1,19 +1,11 @@
-wrfdata 讀p 一讀就SI unit
-
+set_wrfpython_cpus 不要放在grid_general
+垂直內插不要用wrf.interplevel
 cyl功能增加:
-軸對稱率計算
-計算軸對稱與非對稱變數 (待檢查)
-非梯度風計算 (待檢查)
-地轉風計算
-轉風切方向
-smoother
-找最大風速與最小氣壓
-filamentation time (待檢查)
 
+
+定中心 找最大風速與最小氣壓
 穩定度計算
 
 car功能增加:
-cyl的對應 (待檢查)
-算zeta div 2種變形 (待檢查)
-filamentation time (待檢查)
+smoother
 

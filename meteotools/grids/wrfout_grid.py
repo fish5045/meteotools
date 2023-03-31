@@ -68,8 +68,6 @@ class wrfout_grid(gridsystem):
                 try:
                     exec(
                         f'self.{var} = np.squeeze(np.array(wrf.getvar(filenc,"{var}")))')
-                    if var == 'pressure':
-                        self.pressure *= 100  # hPa -> Pa
                     if var == 'P_HYD':
                         self.pressure = self.P_HYD
                         self.sfc_pressure = self.pressure[0]

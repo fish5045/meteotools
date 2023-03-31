@@ -164,6 +164,99 @@ class cartesian_grid(gridsystem, calc_thermaldynamic):
                 f'self.{varname} = np.where(self.hgt_mask,np.nan,self.{varname})')
 
     # ----------------------------------------------------------------- #
+    # computation  (cartesian coordinates only)                         #
+    # ----------------------------------------------------------------- #
+
+    def smooth1d(self, varname, axis=0, center_weight=2, passes=1):
+        '''
+        將指定變數var進行1維的1-center_weight-1平滑
+        輸出平滑後變數smooth1d_var
+
+        Parameters
+        ----------
+        varname : 要進行平滑的變數名稱
+        axis : 要進行平滑的維度，預設為第0維
+        center_weight : 中心權重，愈大則平滑效果愈弱，預設為2
+        passes : 要進行平滑的次數，預設為1
+        '''
+        var = np.moveaxis(eval(f'self.{varname}'), axis, 0)
+        shape = list(var.shape)
+        exec(f'self.smooth1d_{varname} = np.zeros(var.shape)')
+        shape[0] += 2
+        tmp = np.zeros(shape)
+        tmp[1:-1] = var
+        tmp[0] = var[0]
+        tmp[-1] = var[-1]
+        for i in range(passes):
+            tmp[1:-1] = (tmp[:-2] + tmp[2:] + tmp[1:-1]
+                         * center_weight)/(2+center_weight)
+        exec(f'self.smooth1d_{varname} = np.moveaxis(tmp[1:-1], 0, axis)')
+
+    def smooth2d(self, varname, axis=(1, 2), center_weight=2, passes=1):
+        '''
+        將指定變數var進行1維的1-center_weight-1平滑
+        輸出平滑後變數smooth1d_var
+
+        Parameters
+        ----------
+        varname : 要進行平滑的變數名稱
+        axis : 要進行平滑的維度，預設為第1、2維
+        center_weight : 中心權重，愈大則平滑效果愈弱，預設為2
+        passes : 要進行平滑的次數，預設為1
+        '''
+        var = np.moveaxis(eval(f'self.{varname}'), axis[1], 0)
+        var = np.moveaxis(var, axis[0]+1, 0)
+        shape = list(var.shape)
+        exec(f'self.smooth1d_{varname} = np.zeros(var.shape)')
+        shape[0] += 2
+        shape[1] += 2
+        tmp = np.zeros(shape)
+        tmp[1:-1, 1:-1] = var
+        tmp[0, 1:-1] = var[0, :]
+        tmp[-1, 1:-1] = var[-1, :]
+        tmp[1:-1, 0] = var[:, 0]
+        tmp[1:-1, -1] = var[:, -1]
+        for i in range(passes):
+            tmp[1:-1, 1:-1] = (tmp[:-2, 1:-1] + tmp[2:, 1:-1] + tmp[1:-1, :-2]
+                               + tmp[1:-1, 2:] + tmp[1:-1, 1:-1]
+                               * center_weight)/(4+center_weight)
+        exec(f'out = np.moveaxis(tmp[1:-1,1:-1], 0, {axis[0]+1})')
+        exec(f'self.smooth2d_{varname} = np.moveaxis(out, 0, {axis[1]})')
+
+    def smooth3d(self, varname, center_weight=2, passes=1):
+        '''
+        將指定變數var進行1維的1-center_weight-1平滑
+        輸出平滑後變數smooth1d_var
+
+        Parameters
+        ----------
+        varname : 要進行平滑的變數名稱
+        center_weight : 中心權重，愈大則平滑效果愈弱，預設為2
+        passes : 要進行平滑的次數，預設為1
+        '''
+        var = eval(f'self.{varname}')
+        shape = list(var.shape)
+        exec(f'self.smooth1d_{varname} = np.zeros(var.shape)')
+        shape[0] += 2
+        shape[1] += 2
+        shape[2] += 2
+        tmp = np.zeros(shape)
+        tmp[1:-1, 1:-1, 1:-1] = var
+        tmp[0, 1:-1, 1:-1] = var[0, :, :]
+        tmp[-1, 1:-1, 1:-1] = var[-1, :, :]
+        tmp[1:-1, 0, 1:-1] = var[:, 0, :]
+        tmp[1:-1, -1, 1:-1] = var[:, -1, :]
+        tmp[1:-1, 1:-1, 0] = var[:, :, 0]
+        tmp[1:-1, 1:-1, -1] = var[:, :, -1]
+        for i in range(passes):
+            tmp[1: -1, 1: -1, 1:-1] = (tmp[: -2, 1: -1, 1: -1] +
+                                       tmp[2:, 1: -1, 1: -1] + tmp[1: -1, : -2, 1: -1] +
+                                       tmp[1: -1, 2:, 1: -1] + tmp[1: -1, 1: -1, 2:] +
+                                       tmp[1: -1, 1: -1, : -2] + tmp[1: -1, 1: -1, 1: -1] *
+                                       center_weight) / (6 + center_weight)
+        exec(f'self.smooth3d_{varname} = tmp[1:-1,1:-1,1:-1]')
+
+    # ----------------------------------------------------------------- #
     # computation for kinetic variables and PV (cartesian coordinates)  #
     # ----------------------------------------------------------------- #
 

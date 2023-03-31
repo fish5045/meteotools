@@ -147,66 +147,78 @@ def plot_z_1D(car, *varlist):
 def test_calc_correct():
     # 開始測試car functions
     car.calc_wind_speed()
-    plot_var_plan(car, (car.v[2]**2 + car.u[2]**2)**0.5,
-                  np.arange(-0, 1.01, 0.1)*80, 'rainbow')
-    plot_var_plan(car, car.wind_speed[2],
-                  np.arange(-0, 1.01, 0.1)*80, 'rainbow')
+    # plot_var_plan(car, (car.v[2]**2 + car.u[2]**2)**0.5,
+    #              np.arange(-0, 1.01, 0.1)*80, 'rainbow')
+    # plot_var_plan(car, car.wind_speed[2],
+    #              np.arange(-0, 1.01, 0.1)*80, 'rainbow')
 
     car.calc_kinetic_energy()
-    plot_var_plan(car, car.kinetic_energy[1],
-                  np.arange(-1, 1.01, 0.1)*3e3, 'bwr')
+    # plot_var_plan(car, car.kinetic_energy[1],
+    #              np.arange(-1, 1.01, 0.1)*3e3, 'bwr')
 
     car.calc_vorticity_3D()
-    plot_var_plan(car, car.zeta_r[1],
-                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
-    plot_var_plan(car, car.zeta_t[1],
-                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
-    plot_var_plan(car, car.zeta_z[1],
-                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    # plot_var_plan(car, car.zeta_r[1],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    # plot_var_plan(car, car.zeta_t[1],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    # plot_var_plan(car, car.zeta_z[1],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
 
     car.calc_abs_vorticity_3D()
-    plot_var_plan(car, car.abs_zeta_z[1],
-                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    # plot_var_plan(car, car.abs_zeta_z[1],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
 
     car.calc_vorticity_z()
-    plot_var_plan(car, car.zeta_z[1],
-                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    # plot_var_plan(car, car.zeta_z[1],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
     car.calc_abs_vorticity_z()
-    plot_var_plan(car, car.abs_zeta_z[1],
-                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    # plot_var_plan(car, car.abs_zeta_z[1],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
 
     car.calc_divergence_hori()
     car.calc_divergence()
-    plot_var_plan(car, car.div_hori[1],
-                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
-    plot_var_plan(car, car.div[1],
-                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    # plot_var_plan(car, car.div_hori[1],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    # plot_var_plan(car, car.div[1],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
 
     car.calc_density_potential_temperature()
-    plot_var_plan(car, car.Th_rho[1],
-                  np.arange(-1, 1.01, 0.1) * 10 + 305, 'rainbow')
-    plot_var_plan(car, car.Th[1],
-                  np.arange(-1, 1.01, 0.1) * 10 + 305, 'rainbow')
-    plot_var_plan(car, car.Th_rho[1] - car.Th[1],
-                  np.arange(-0, 1.01, 0.1) * 5, 'Reds')
-    plot_var_plan(car, car.qv[1],
-                  np.arange(-0, 1.01, 0.1) * 30/1000, 'Blues')
-    plot_var_plan(car, (car.qc+car.qr+car.qi+car.qs+car.qg)[1],
-                  np.arange(-0, 1.01, 0.1) * 12/1000, 'Blues')
+    # plot_var_plan(car, car.Th_rho[1],
+    #              np.arange(-1, 1.01, 0.1) * 10 + 305, 'rainbow')
+    # plot_var_plan(car, car.Th[1],
+    #              np.arange(-1, 1.01, 0.1) * 10 + 305, 'rainbow')
+    # plot_var_plan(car, car.Th_rho[1] - car.Th[1],
+    #              np.arange(-0, 1.01, 0.1) * 5, 'Reds')
+    # plot_var_plan(car, car.qv[1],
+    #              np.arange(-0, 1.01, 0.1) * 30/1000, 'Blues')
+    # plot_var_plan(car, (car.qc+car.qr+car.qi+car.qs+car.qg)[1],
+    #              np.arange(-0, 1.01, 0.1) * 12/1000, 'Blues')
 
     car.calc_PV()
-    plot_var_plan(car, car.PV[1],
-                  np.arange(-0, 1.01, 0.1) * 5e-5, 'Blues')
+    # plot_var_plan(car, car.PV[1],
+    #              np.arange(-0, 1.01, 0.1) * 5e-5, 'Blues')
 
     car.calc_deformation()
-    plot_var_plan(car, car.shear_deform[1],
-                  np.arange(-1, 1.01, 0.1) * 1e-2, 'bwr')
-    plot_var_plan(car, car.stretch_deform[1],
-                  np.arange(-1, 1.01, 0.1) * 1e-2, 'bwr')
+    # plot_var_plan(car, car.shear_deform[1],
+    #              np.arange(-1, 1.01, 0.1) * 1e-2, 'bwr')
+    # plot_var_plan(car, car.stretch_deform[1],
+    #              np.arange(-1, 1.01, 0.1) * 1e-2, 'bwr')
 
     car.calc_filamentation()
-    plot_var_plan(car, car.filamentation_time[5],
-                  np.arange(-0, 1.01, 0.1) * 3600, 'bwr')
+    # plot_var_plan(car, car.filamentation_time[5],
+    #              np.arange(-0, 1.01, 0.1) * 3600, 'bwr')
+
+    plot_var_plan(car, car.zeta_z[5],
+                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    car.smooth1d('zeta_z', 0, passes=10)
+    # plot_var_plan(car, car.smooth1d_zeta_z[5],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    car.smooth2d('zeta_z', (1, 2), passes=10)
+    # plot_var_plan(car, car.smooth2d_zeta_z[5],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    car.smooth3d('zeta_z', passes=10)
+    plot_var_plan(car, car.smooth3d_zeta_z[5],
+                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
 
 
 @reset_car

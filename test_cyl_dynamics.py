@@ -142,12 +142,12 @@ def test_calc_correct():
     # 開始測試cyl functions
     cyl.calc_vr_vt()
     cyl.calc_wind_speed()
-    plot_var_plan(cyl, (cyl.v[2]**2 + cyl.u[2]**2)**0.5,
-                  np.arange(-0, 1.01, 0.1)*80, 'rainbow')
-    plot_var_plan(cyl, (cyl.vr[2]**2 + cyl.vt[2]**2)**0.5,
-                  np.arange(-0, 1.01, 0.1)*80, 'rainbow')
-    plot_var_plan(cyl, cyl.wind_speed[2],
-                  np.arange(-0, 1.01, 0.1)*80, 'rainbow')
+    # plot_var_plan(cyl, (cyl.v[2]**2 + cyl.u[2]**2)**0.5,
+    #              np.arange(-0, 1.01, 0.1)*80, 'rainbow')
+    # plot_var_plan(cyl, (cyl.vr[2]**2 + cyl.vt[2]**2)**0.5,
+    #              np.arange(-0, 1.01, 0.1)*80, 'rainbow')
+    # plot_var_plan(cyl, cyl.wind_speed[2],
+    #              np.arange(-0, 1.01, 0.1)*80, 'rainbow')
 
     cyl.calc_axisymmetric_asymmetric('vt')
     cyl.find_rmw_and_speed()
@@ -168,60 +168,70 @@ def test_calc_correct():
     #              np.arange(-1, 1.01, 0.1)*1e-1, 'bwr')
 
     cyl.calc_kinetic_energy()
-    plot_var_plan(cyl, cyl.kinetic_energy[1],
-                  np.arange(-1, 1.01, 0.1)*3e3, 'bwr')
+    # plot_var_plan(cyl, cyl.kinetic_energy[1],
+    #              np.arange(-1, 1.01, 0.1)*3e3, 'bwr')
 
     cyl.calc_vorticity_3D()
-    plot_var_plan(cyl, cyl.zeta_r[1],
-                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
-    plot_var_plan(cyl, cyl.zeta_t[1],
-                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
-    plot_var_plan(cyl, cyl.zeta_z[1],
-                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    # plot_var_plan(cyl, cyl.zeta_r[1],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    # plot_var_plan(cyl, cyl.zeta_t[1],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    # plot_var_plan(cyl, cyl.zeta_z[1],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
 
     cyl.calc_abs_vorticity_3D()
-    plot_var_plan(cyl, cyl.abs_zeta_z[1],
-                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    # plot_var_plan(cyl, cyl.abs_zeta_z[1],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
 
     cyl.calc_vorticity_z()
-    plot_var_plan(cyl, cyl.zeta_z[1],
-                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    # plot_var_plan(cyl, cyl.zeta_z[1],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
     cyl.calc_abs_vorticity_z()
-    plot_var_plan(cyl, cyl.abs_zeta_z[1],
-                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    # plot_var_plan(cyl, cyl.abs_zeta_z[1],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
 
     cyl.calc_divergence_hori()
     cyl.calc_divergence()
-    plot_var_plan(cyl, cyl.div_hori[1],
-                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
-    plot_var_plan(cyl, cyl.div[1],
-                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    # plot_var_plan(cyl, cyl.div_hori[1],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    # plot_var_plan(cyl, cyl.div[1],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
 
     cyl.calc_density_potential_temperature()
-    plot_var_plan(cyl, cyl.Th_rho[1],
-                  np.arange(-1, 1.01, 0.1) * 10 + 305, 'rainbow')
-    plot_var_plan(cyl, cyl.Th[1],
-                  np.arange(-1, 1.01, 0.1) * 10 + 305, 'rainbow')
-    plot_var_plan(cyl, cyl.Th_rho[1] - cyl.Th[1],
-                  np.arange(-0, 1.01, 0.1) * 5, 'Reds')
-    plot_var_plan(cyl, cyl.qv[1],
-                  np.arange(-0, 1.01, 0.1) * 30/1000, 'Blues')
-    plot_var_plan(cyl, (cyl.qc+cyl.qr+cyl.qi+cyl.qs+cyl.qg)[1],
-                  np.arange(-0, 1.01, 0.1) * 12/1000, 'Blues')
+    # plot_var_plan(cyl, cyl.Th_rho[1],
+    #              np.arange(-1, 1.01, 0.1) * 10 + 305, 'rainbow')
+    # plot_var_plan(cyl, cyl.Th[1],
+    #              np.arange(-1, 1.01, 0.1) * 10 + 305, 'rainbow')
+    # plot_var_plan(cyl, cyl.Th_rho[1] - cyl.Th[1],
+    #              np.arange(-0, 1.01, 0.1) * 5, 'Reds')
+    # plot_var_plan(cyl, cyl.qv[1],
+    #              np.arange(-0, 1.01, 0.1) * 30/1000, 'Blues')
+    # plot_var_plan(cyl, (cyl.qc+cyl.qr+cyl.qi+cyl.qs+cyl.qg)[1],
+    #              np.arange(-0, 1.01, 0.1) * 12/1000, 'Blues')
 
     cyl.calc_PV()
-    plot_var_plan(cyl, cyl.PV[1],
-                  np.arange(-0, 1.01, 0.1) * 5e-5, 'Blues')
+    # plot_var_plan(cyl, cyl.PV[1],
+    #              np.arange(-0, 1.01, 0.1) * 5e-5, 'Blues')
 
     cyl.calc_deformation()
-    plot_var_plan(cyl, cyl.shear_deform[1],
-                  np.arange(-1, 1.01, 0.1) * 1e-2, 'bwr')
-    plot_var_plan(cyl, cyl.stretch_deform[1],
-                  np.arange(-1, 1.01, 0.1) * 1e-2, 'bwr')
+    # plot_var_plan(cyl, cyl.shear_deform[1],
+    #              np.arange(-1, 1.01, 0.1) * 1e-2, 'bwr')
+    # plot_var_plan(cyl, cyl.stretch_deform[1],
+    #              np.arange(-1, 1.01, 0.1) * 1e-2, 'bwr')
 
     cyl.calc_filamentation()
-    plot_var_plan(cyl, cyl.filamentation_time[5],
-                  np.arange(-0, 1.01, 0.1) * 3600, 'bwr')
+    # plot_var_plan(cyl, cyl.filamentation_time[5],
+    #              np.arange(-0, 1.01, 0.1) * 3600, 'bwr')
+    cyl.calc_axisymmetry('vt')
+    #plot_var_RZ(cyl, cyl.axisymmetry_vt, np.arange(0, 1.01, 0.1), 'Reds')
+    cyl.calc_axisymmetry('f')
+    # print(cyl.axisymmetry_f)
+
+    plot_var_plan(cyl, cyl.vt[2],
+                  np.arange(-0, 1.01, 0.1)*80, 'rainbow')
+    cyl.rotate_to_shear_direction('vt', 30, 'deg')
+    plot_var_plan(cyl, cyl.shear_relative_vt[2],
+                  np.arange(-0, 1.01, 0.1)*80, 'rainbow')
 
 
 @reset_cyl
@@ -229,8 +239,6 @@ def test_calc_axisymmetric_asymmetric():
     assert ('sym_v' not in dir(cyl) and 'asy_v' not in dir(cyl)) == True
     cyl.calc_axisymmetric_asymmetric('v')
     assert ('sym_v' in dir(cyl) and 'asy_v' in dir(cyl)) == True
-    assert check_exception(
-        DimensionError, cyl.calc_axisymmetric_asymmetric, 'f')
     del cyl.u
     assert check_exception(
         AttributeError, cyl.calc_axisymmetric_asymmetric, 'u')
@@ -356,8 +364,8 @@ def test_calc_filamentation():
 
 
 def test_dynamics():
-    test_calc_axisymmetric_asymmetric()
     test_calc_vr_vt()
+    test_calc_axisymmetric_asymmetric()
     test_calc_fric_vr_vt()
     test_calc_wind_speed()
     test_find_rmw_and_speed()
