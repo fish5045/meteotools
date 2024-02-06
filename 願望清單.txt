@@ -1,11 +1,24 @@
 set_wrfpython_cpus 不要放在grid_general
+wrfout設定資料到cyl與car時順便設定時間
+wrfout設定資料到cyl與car時可以設定scalar
+fileprocess 增加second_to_wrf_datetime
 垂直內插不要用wrf.interplevel
+
+ERA5網格:
+讀寫支援
+
+
 cyl功能增加:
 
-
+AAM 計算
+AAM 收支
 定中心 找最大風速與最小氣壓
 穩定度計算
 
 car功能增加:
-smoother
+鋒生函數
+
+
+
+
 

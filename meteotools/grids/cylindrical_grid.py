@@ -4,9 +4,9 @@ import wrf
 from scipy.interpolate import splev, splrep
 
 from ..interpolation import interp2D_fast_layers, interp2D_fast
-from ..calc import Make_cyclinder_coord, FD2, calc_RZaverage
+from ..calc import Make_cyclinder_coord, FD2, calc_RZaverage, calc_Zaverage, calc_Raverage
 from ..tools import timer
-from ..exceptions import DimensionError
+from ..exceptions import DimensionError, UnitError
 from .grid_general import gridsystem
 from .thermaldynamic_calculation import calc_thermaldynamic
 
@@ -48,36 +48,6 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
         self.xTR, self.yTR = Make_cyclinder_coord(
             [offset_y, offset_x], self.r, self.theta)
 
-    def set_terrain(self, var):
-        # 決定地形高度，包含地形mask (self.isin_hgt)、地形idx (self.hgt_idx)
-        self.hgt_idx = np.sum(np.isnan(var), axis=0)  # 決定地形idx，統計垂直方向的np.nan加總
-        if self.z[0] == 0:  # 但有時候會在零星幾格單獨存在np.nan 要將這些慮除
-            # 如果z座標底層高度是0，都會是np.nan，無法識別，所以識別z為第一層，如果這層存在np.nan，表示這裡才有地形，否則給予1 (為第0層的np.nan計數)
-            self.hgt_idx = np.where(np.isnan(var[1, :, :]), self.hgt_idx, 1)
-        else:
-            # 如果z座標底層高度不是0，此層存在np.nan表示有地形，保留hgt_idx計數，否則將hgt_idx設為0 (np.nan為零星，非地形)
-            self.hgt_idx = np.where(np.isnan(var[0, :, :]), self.hgt_idx, 0)
-        self.isin_hgt = np.where(np.ones([self.Nz, self.Ntheta, self.Nr])*np.arange(
-            self.Nz).reshape(-1, 1, 1) < self.hgt_idx, True, False)
-
-    def set_data_old(self, wrf_dx, wrf_dy, wrf_vertical, **vardict):
-        self.varlist3D = []
-        self.varlist2D = []
-        for varname, var in vardict.items():
-            if len(var.shape) == 3:
-                tmp = np.array(wrf.interplevel(var, wrf_vertical, self.z))
-                tmp2 = interp2D_fast_layers(
-                    wrf_dx, wrf_dy, self.xTR, self.yTR, tmp)
-                if self.varlist3D == []:
-                    if self.vertical_coord_type == 'z':
-                        self.set_terrain(tmp2)
-                # tmp2 = self.fill_value(tmp2)
-                exec(f'self.{varname} = tmp2')
-                self.varlist3D.append(varname)
-            elif len(var.shape) == 2:
-                exec(
-                    f'self.{varname} = interp2D_fast(wrf_dx, wrf_dy, self.xTR, self.yTR, var)')
-                self.varlist2D.append(varname)
 
     def spline(self, var, vert, obj_vert):
         Nx = var.shape[2]
@@ -104,31 +74,27 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
                     f'self.{varname} = interp2D_fast(wrf_dx, wrf_dy, self.xTR, self.yTR, var)')
                 self.varlist2D.append(varname)
 
-        group = [[vardict[varname], wrf_vertical, self.z]
+        # 3D平行化垂直內插
+        group = [[vardict[varname], wrf_vertical, self.z, vertical_interp_order]
                  for varname in self.varlist3D]
-        if ver_interp_order == 1:
+
+        if vertical_interp_order == 1:
             tmp = []
-            for var, vertical, specific_z in group:
+            for var, vertical, specific_z, vertical_interp_order in group:
                 tmp.append(np.array(wrf.interplevel(
                     var, vertical, specific_z)))
 
-            '''
-            pool = mp.Pool(self.interp_cpus)
-            tmp = pool.map(wrf.interplevel,group)
-            pool.close()
-            pool.join()
-            '''
 
-        elif ver_interp_order == 2:
+        elif vertical_interp_order == 2 or vertical_interp_order == 3:
             pool = mp.Pool(self.interp_cpus)
             tmp = pool.starmap(self.spline, group)
             pool.close()
             pool.join()
+
+
         for idx, varname in enumerate(self.varlist3D):
-            #tmp = np.array(wrf.interplevel(var,wrf_vertical,self.z))
             tmp2 = interp2D_fast_layers(
                 wrf_dx, wrf_dy, self.xTR, self.yTR, tmp[idx])
-            # tmp2 = self.fill_value(tmp2)
             exec(f'self.{varname} = tmp2')
 
         if 'hgt' in self.varlist2D:
@@ -136,48 +102,15 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
             self.terrain_mask_vars()  # 將地形內部的格點設定為nan
 
     def set_terrain(self):
-        def fix_hgt_idx(hgt_idx):
-            hgt_idx[0, 1: -1] = np.where(hgt_idx[0, 1: -1] <
-                                         hgt_idx[1, 1: -1],
-                                         hgt_idx[1, 1: -1],
-                                         hgt_idx[0, 1: -1])
-            hgt_idx[-1, 1: -1] = np.where(hgt_idx[-1, 1: -1] <
-                                          hgt_idx[-2, 1: -1],
-                                          hgt_idx[-2, 1: -1],
-                                          hgt_idx[-1, 1: -1])
-            hgt_idx[1: -1, 0] = np.where(hgt_idx[1: -1, 0] <
-                                         hgt_idx[1: -1, 1],
-                                         hgt_idx[1: -1, 1],
-                                         hgt_idx[1: -1, 0])
-            hgt_idx[1: -1, -1] = np.where(hgt_idx[1: -1, -1] <
-                                          hgt_idx[1: -1, -2],
-                                          hgt_idx[1: -1, -2],
-                                          hgt_idx[1: -1, -1])
-            hgt_idx[0, 0] = np.max(
-                [hgt_idx[0, 0], hgt_idx[1, 0], hgt_idx[0, 1]])
-            hgt_idx[0, -1] = np.max([hgt_idx[0, -1],
-                                    hgt_idx[1, -1], hgt_idx[0, -2]])
-            hgt_idx[-1, 0] = np.max([hgt_idx[-1, 0],
-                                    hgt_idx[-2, 0], hgt_idx[-1, 1]])
-            hgt_idx[-1, -1] = np.max([hgt_idx[-1, -1],
-                                     hgt_idx[-2, -1], hgt_idx[-1, -2]])
-            return hgt_idx
+        self.z_3d = np.stack([np.stack([self.z]*self.Nt, axis=-1)]*self.Nr, axis=-1)
+        self.hgt_3d = np.stack([self.hgt]*self.Nz)
+        self.terrain_mask = np.where(self.z_3d <= self.hgt_3d, True, False)
 
-        # hgt_mask為各網格是否在地形內，以wrfout內的地形高度HGT作為地形高度標準
-        # hgt_idx為各水平位置點上，有多少個點位於地形之下
-        self.hgt_idx = (self.hgt-self.z_start)//self.dz + 1
-        self.hgt_idx = self.hgt_idx.astype('int32')
-        self.hgt_idx = np.where(self.hgt_idx < 0, 0, self.hgt_idx)
-        self.hgt_idx = fix_hgt_idx(self.hgt_idx)
-        self.hgt_mask = np.where(
-            self.hgt_idx.reshape(1, self.Ntheta, self.Nr) > np.arange(
-                0, self.Nz, 1).reshape(-1, 1, 1),
-            1, 0)
 
     def terrain_mask_vars(self):
         for varname in self.varlist3D:
             exec(
-                f'self.{varname} = np.where(self.hgt_mask,np.nan,self.{varname})')
+                f'self.{varname} = np.where(self.terrain_mask,np.nan,self.{varname})')
 
     # ------------------------------------------------------------------- #
     # computation  (cylindrical coordinates only)                         #
@@ -277,6 +210,16 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
                 theta) - self.fric_u*np.sin(theta)
         else:
             raise AttributeError('須先設定 fric_u, fric_v')
+
+    def calc_aam(self):
+        if 'f' not in dir(self):
+            raise AttributeError('須先設定f')
+        if 'vt' not in dir(self) or 'vr' not in dir(self):
+            self.calc_vr_vt()
+        r_dim = [1,] * (self.vt.ndim-1) + [-1]
+        r = self.r.reshape(r_dim)
+        self.aam = self.vt*r + 0.5*self.f*r**2
+
 
     def find_rmw_and_speed(self):
         if 'sym_vt' not in dir(self):
@@ -457,3 +400,41 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
 
         self.filamentation_time = \
             np.where(self.strain_region, self.filamentation_time, np.inf)
+
+    # ----------------------------------------------------------------- #
+    # Average (cylindrical coordinates)                                 #
+    # ----------------------------------------------------------------- #
+    def calc_horizontal_average(self, varname, tmin=np.nan, tmax=np.nan,
+                                rmin=np.nan, rmax=np.nan, unit='rad'):
+        if unit == 'deg':
+            tmin = np.deg2rad(tmin)
+            tmax = np.deg2rad(tmax)
+        elif unit == 'rad':
+            tmin = tmin
+            tmax = tmax
+        elif unit == 'index':
+            tmin = self.theta[tmin]
+            tmax = self.theta[tmax]
+        else:
+            raise UnitError('無效的單位，請輸入deg, rad, index其一。')
+
+        if eval(f'len(self.{varname}.shape)') == 3:
+            tmp = calc_Zaverage(eval(f'self.{varname}'),
+                                self.theta, 1, tmin, tmax)
+            exec(
+                f'self.havg_{varname} = calc_Raverage(tmp, self.r, 1, rmin, rmax)')
+        elif eval(f'len(self.{varname}.shape)') == 2:  # 假設是(theta, r)
+            exec(
+                f'self.havg_{varname} = calc_RZaverage(self.{varname}, self.theta, self.r, rmin, rmax, tmin, tmax)')
+        else:
+            raise DimensionError('varname不是3維(z, theta, r)或2維(theta, r)')
+
+    def calc_vertical_average(self, varname, zmin=np.nan, zmax=np.nan):
+        if eval(f'len(self.{varname}.shape)') == 3:
+            exec(
+                f'self.zavg_{varname} = calc_Zaverage(self.{varname}, self.z, 0, zmin, zmax)')
+        elif eval(f'len(self.{varname}.shape)') == 1:  # 假設是(z)
+            exec(
+                f'self.zavg_{varname} = calc_Zaverage(self.{varname}, self.z, 0, zmin, zmax)')
+        else:
+            raise DimensionError('varname不是3維(z, theta, r)或1維(z)')

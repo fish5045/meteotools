@@ -31,12 +31,7 @@ def reset_car(func):
 def set_car(settings, cpus):
     wrfdata = wrfout_grid(settings['wrf'], interp_cpus=cpus)
     curr_time = wrfdata.wrfout_time
-    car = cartesian_grid(f'./data/test_car_d_{curr_time}.nc',
-                         interp_cpus=cpus)
-    car.ncfile_readvars('u', 'v', 'w', 'f', 'p', 'T', 'Th',
-                        'qv', 'qc', 'qr', 'qi', 'qs', 'qg')
 
-    car.set_horizontal_location(0, 0)
 
     try:
         car = cartesian_grid(f'./data/test_car_d_{curr_time}.nc',
@@ -208,8 +203,8 @@ def test_calc_correct():
     # plot_var_plan(car, car.filamentation_time[5],
     #              np.arange(-0, 1.01, 0.1) * 3600, 'bwr')
 
-    plot_var_plan(car, car.zeta_z[5],
-                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    # plot_var_plan(car, car.zeta_z[5],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
     car.smooth1d('zeta_z', 0, passes=10)
     # plot_var_plan(car, car.smooth1d_zeta_z[5],
     #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
@@ -217,8 +212,22 @@ def test_calc_correct():
     # plot_var_plan(car, car.smooth2d_zeta_z[5],
     #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
     car.smooth3d('zeta_z', passes=10)
-    plot_var_plan(car, car.smooth3d_zeta_z[5],
-                  np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    # plot_var_plan(car, car.smooth3d_zeta_z[5],
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+
+    car.calc_vertical_average('zeta_z', zmin=1000, zmax=3000)
+    # plot_var_plan(car, car.zavg_zeta_z,
+    #              np.arange(-1, 1.01, 0.1)*1e-2, 'bwr')
+    car.calc_vertical_average('PV')
+    # plot_var_plan(car, car.zavg_PV,
+    #              np.arange(-0, 1.01, 0.1) * 5e-5, 'Blues')
+
+    car.calc_horizontal_average('zeta_z')
+    #plot_z_1D(car, car.havg_zeta_z,)
+    car.calc_horizontal_average('PV')
+    #plot_z_1D(car, car.havg_PV,)
+    car.calc_horizontal_average('f')
+    # print(car.havg_f)
 
 
 @reset_car
@@ -374,5 +383,6 @@ if __name__ == '__main__':
     cpus = settings['system']['calc_cpus']
 
     car = set_car(settings, cpus)
-    test_calc_correct()
-    # test_dynamics()
+    #test_calc_correct()
+    #test_dynamics()
+    #print(dir(car))

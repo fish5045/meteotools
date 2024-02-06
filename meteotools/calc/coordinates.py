@@ -174,10 +174,10 @@ def cartesian2cylindrical(
 
     '''
 
-    def check_input(centerLocation, r, theta, xTR, yTR):
-        if None not in [xTR, yTR]:
+    def check_input(xTR, yTR):
+        if type(None) not in [type(xTR), type(yTR)]:
             return xTR, yTR
-        elif None not in [centerLocation, r, theta]:
+        elif type(None) not in [type(centerLocation), type(r), type(theta)]:
             xTR, yTR = Make_cyclinder_coord(centerLocation, r, theta)
             return xTR, yTR
         else:

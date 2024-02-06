@@ -6,3 +6,4 @@ subroutine_to_python.f95.backup
 small_test.py
 data
 data/*
+wrfdata

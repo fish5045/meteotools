@@ -13,7 +13,9 @@ def movie_make(src_dir, video_name, fps=30, video_fmt='mp4v'):
          影片格式           video_fmt     'aviv'
 
     '''
-    pic = [_pic for _pic in os.listdir(src_dir) if '.png' in _pic]
+    c = os.listdir(src_dir)
+    c.sort(key=lambda e: int(e.split('.')[0]))
+    pic = [_pic for _pic in c if '.png' in _pic]
 
     try:
         size = cv2.imread(pth(src_dir, pic[0])).shape

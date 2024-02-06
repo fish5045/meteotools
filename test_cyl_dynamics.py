@@ -226,12 +226,15 @@ def test_calc_correct():
     #plot_var_RZ(cyl, cyl.axisymmetry_vt, np.arange(0, 1.01, 0.1), 'Reds')
     cyl.calc_axisymmetry('f')
     # print(cyl.axisymmetry_f)
-
-    plot_var_plan(cyl, cyl.vt[2],
-                  np.arange(-0, 1.01, 0.1)*80, 'rainbow')
-    cyl.rotate_to_shear_direction('vt', 30, 'deg')
-    plot_var_plan(cyl, cyl.shear_relative_vt[2],
-                  np.arange(-0, 1.01, 0.1)*80, 'rainbow')
+    # plot_var_plan(cyl, cyl.vt[2],
+    #              np.arange(-0, 1.01, 0.1)*80, 'rainbow')
+    #cyl.rotate_to_shear_direction('vt', 30, 'deg')
+    # plot_var_plan(cyl, cyl.shear_relative_vt[2],
+    #              np.arange(-0, 1.01, 0.1)*80, 'rainbow')
+    cyl.calc_horizontal_average('f', 80, 100, unit='deg')
+    # print(cyl.havg_f)
+    cyl.calc_horizontal_average('PV', rmin=15000, rmax=60000)
+    #plot_z_1D(cyl, cyl.havg_PV,)
 
 
 @reset_cyl
