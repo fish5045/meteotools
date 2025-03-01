@@ -438,3 +438,18 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
                 f'self.zavg_{varname} = calc_Zaverage(self.{varname}, self.z, 0, zmin, zmax)')
         else:
             raise DimensionError('varname不是3維(z, theta, r)或1維(z)')
+
+    def calc_IKE(self, rmax = np.nan):
+        if 'kinetic_energy' not in dir(self):
+            self.calc_kinetic_energy()
+        if 'rho' not in dir(self):
+            self.calc_rho()
+        if rmax == np.nan or rmax >= self.r[-1]:
+            idx = self.r.shape[0]
+        else:
+            idx = np.where(self.r - rmax < 0)[0][-1]
+
+        r3d = np.stack([np.stack([self.r[:idx]]*self.Ntheta)]*self.Nz)
+        volume = r3d*self.dr*self.dtheta*self.dz
+        self.IKE = np.nansum(self.rho[:,:,:idx]*self.kinetic_energy[:,:,:idx]*volume)
+
