@@ -48,6 +48,11 @@ class wrfout_grid(gridsystem):
     def correct_map_scale(self):
         self.ua *= self.MAPFAC_MX
         self.va *= self.MAPFAC_MY
+        try:
+            self.u10 *= self.MAPFAC_MX
+            self.v10 *= self.MAPFAC_MY
+        except:
+            pass
 
     @timer
     def read_data(self, *varlist):

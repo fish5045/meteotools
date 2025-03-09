@@ -36,14 +36,14 @@ def set_cyl(settings, cpus):
         cyl = cylindrical_grid(f'./data/test_cyl_d_{curr_time}.nc',
                                interp_cpus=cpus)
         cyl.ncfile_readvars('u', 'v', 'w', 'f', 'p', 'T', 'Th',
-                            'qv', 'qc', 'qr', 'qi', 'qs', 'qg')
+                            'qv', 'qc', 'qr', 'qi', 'qs', 'qg', 'u10', 'v10')
         cyl.set_horizontal_location(0, 0)
 
     except:
         wrfdata.read_data(
-            'ua', 'va', 'wa', 'MAPFAC_MX', 'MAPFAC_MY', 'F', 'z', 'pressure',
+            'ua', 'va', 'wa', 'MAPFAC_MX', 'MAPFAC_MY', 'F', 'z', 'p',
             'tk', 'theta', 'QVAPOR', 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW',
-            'QGRAUP')
+            'QGRAUP', 'U10', 'V10')
 
         wrfdata.correct_map_scale()
 
@@ -54,20 +54,21 @@ def set_cyl(settings, cpus):
 
         cyl.set_data(wrfdata.dx, wrfdata.dy, wrfdata.z,
                      u=wrfdata.ua, v=wrfdata.va, w=wrfdata.wa,
-                     f=wrfdata.F, p=wrfdata.pressure,
+                     f=wrfdata.F, p=wrfdata.p,
                      T=wrfdata.tk, Th=wrfdata.theta,
                      qv=wrfdata.QVAPOR, qc=wrfdata.QCLOUD,
                      qr=wrfdata.QRAIN, qi=wrfdata.QICE,
-                     qs=wrfdata.QSNOW, qg=wrfdata.QGRAUP)
+                     qs=wrfdata.QSNOW, qg=wrfdata.QGRAUP,
+                     u10=wrfdata.U10, v10=wrfdata.V10)
 
         cyl.set_horizontal_location(0, 0)
 
         out_file_name = f'./data/test_cyl_d_{curr_time}.nc'
         cyl.create_ncfile(out_file_name, wrfdata.time)
         cyl.ncfile_addvar('u', ['vertical', 'tangential', 'radial'],
-                          unit='m/s', description='storm-relative WE wind')
+                          unit='m/s', description='WE wind')
         cyl.ncfile_addvar('v', ['vertical', 'tangential', 'radial'],
-                          unit='m/s', description='storm-relative NS wind')
+                          unit='m/s', description='NS wind')
         cyl.ncfile_addvar('w', ['vertical', 'tangential', 'radial'],
                           unit='m/s', description='vertical velocity')
         cyl.ncfile_addvar('f', ['tangential', 'radial'],
@@ -90,7 +91,11 @@ def set_cyl(settings, cpus):
         cyl.ncfile_addvar('qs', ['vertical', 'tangential', 'radial'],
                           unit='kg/kg', description='snow mixing ratio')
         cyl.ncfile_addvar('qg', ['vertical', 'tangential', 'radial'],
-                          unit='kg/kg', description='graupel mixing ratio')
+                          unit='kg/kg', description='')
+        cyl.ncfile_addvar('u10', ['tangential', 'radial'],
+                          unit='m/s', description='WE wind at 10 m')
+        cyl.ncfile_addvar('v10', ['tangential', 'radial'],
+                          unit='m/s', description='NS wind at 10 m')
 
         size = os.path.getsize(out_file_name)
         print(f'Complete to preprocess {curr_time}.')
@@ -366,6 +371,11 @@ def test_calc_filamentation():
     cyl.calc_filamentation()
 
 
+@reset_cyl
+def test_calc_IKE():
+    cyl.calc_IKE10(rmax=200000,min_wspd10=30)
+    print(cyl.IKE10/1e12)
+
 def test_dynamics():
     test_calc_vr_vt()
     test_calc_axisymmetric_asymmetric()
@@ -385,6 +395,7 @@ def test_dynamics():
     test_calc_PV()
     test_calc_deformation()
     test_calc_filamentation()
+    test_calc_IKE()
 
 
 if __name__ == '__main__':

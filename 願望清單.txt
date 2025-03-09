@@ -2,7 +2,9 @@ set_wrfpython_cpus 不要放在grid_general
 wrfout設定資料到cyl與car時順便設定時間
 wrfout設定資料到cyl與car時可以設定scalar
 fileprocess 增加second_to_wrf_datetime
-垂直內插不要用wrf.interplevel
+垂直內插不要用wrf.interplevel  可以很快速的切換線性內插或spline內插
+transformation內的兩個函數應該要放置在其他地方，或修改transformation.py檔名
+考慮cartesian_grid與cylindrical_grid裡面所有calc method計算主體移到calc資料夾內，method去call calc內的function，像thermaldynamic_calc一樣
 
 ERA5網格:
 讀寫支援
@@ -10,10 +12,12 @@ ERA5網格:
 
 cyl功能增加:
 
-AAM 計算
-AAM 收支
 定中心 找最大風速與最小氣壓
-穩定度計算
+靜力穩定度 慣性穩定度 斜壓性 羅士比變形半徑 梯度風 非梯度風 熱力風 地轉位渦 相當位渦(使用相當位溫與絕對渦度)
+浮力(rho_0可是(z)或(z,y,x)或(z,theta,r)) (可選則是否考慮water loading)
+Richardson number
+寫一個cyl專用的微分(處理需要徑向加權的部分)
+
 
 car功能增加:
 鋒生函數

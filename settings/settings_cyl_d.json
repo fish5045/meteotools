@@ -17,7 +17,7 @@
         "dt": 3600
     },
     "cylindrical_grid": {
-        "Nr": 150,
+        "Nr": 300,
         "Ntheta": 90,
         "Nz": 15,
         "dr": 1000,

@@ -49,6 +49,37 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
             [offset_y, offset_x], self.r, self.theta)
 
 
+    def set_terrain(self, var):
+        # 決定地形高度，包含地形mask (self.isin_hgt)、地形idx (self.hgt_idx)
+        self.hgt_idx = np.sum(np.isnan(var), axis=0)  # 決定地形idx，統計垂直方向的np.nan加總
+        if self.z[0] == 0:  # 但有時候會在零星幾格單獨存在np.nan 要將這些慮除
+            # 如果z座標底層高度是0，都會是np.nan，無法識別，所以識別z為第一層，如果這層存在np.nan，表示這裡才有地形，否則給予1 (為第0層的np.nan計數)
+            self.hgt_idx = np.where(np.isnan(var[1, :, :]), self.hgt_idx, 1)
+        else:
+            # 如果z座標底層高度不是0，此層存在np.nan表示有地形，保留hgt_idx計數，否則將hgt_idx設為0 (np.nan為零星，非地形)
+            self.hgt_idx = np.where(np.isnan(var[0, :, :]), self.hgt_idx, 0)
+        self.isin_hgt = np.where(np.ones([self.Nz, self.Ntheta, self.Nr])*np.arange(
+            self.Nz).reshape(-1, 1, 1) < self.hgt_idx, True, False)
+
+    def set_data_old(self, wrf_dx, wrf_dy, wrf_vertical, **vardict):
+        self.varlist3D = []
+        self.varlist2D = []
+        for varname, var in vardict.items():
+            if len(var.shape) == 3:
+                tmp = np.array(wrf.interplevel(var, wrf_vertical, self.z))
+                tmp2 = interp2D_fast_layers(
+                    wrf_dx, wrf_dy, self.xTR, self.yTR, tmp)
+                if self.varlist3D == []:
+                    if self.vertical_coord_type == 'z':
+                        self.set_terrain(tmp2)
+                # tmp2 = self.fill_value(tmp2)
+                exec(f'self.{varname} = tmp2')
+                self.varlist3D.append(varname)
+            elif len(var.shape) == 2:
+                exec(
+                    f'self.{varname} = interp2D_fast(wrf_dx, wrf_dy, self.xTR, self.yTR, var)')
+                self.varlist2D.append(varname)
+
     def spline(self, var, vert, obj_vert):
         Nx = var.shape[2]
         Ny = var.shape[1]
@@ -74,27 +105,31 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
                     f'self.{varname} = interp2D_fast(wrf_dx, wrf_dy, self.xTR, self.yTR, var)')
                 self.varlist2D.append(varname)
 
-        # 3D平行化垂直內插
-        group = [[vardict[varname], wrf_vertical, self.z, vertical_interp_order]
+        group = [[vardict[varname], wrf_vertical, self.z]
                  for varname in self.varlist3D]
-
-        if vertical_interp_order == 1:
+        if ver_interp_order == 1:
             tmp = []
-            for var, vertical, specific_z, vertical_interp_order in group:
+            for var, vertical, specific_z in group:
                 tmp.append(np.array(wrf.interplevel(
                     var, vertical, specific_z)))
 
+            '''
+            pool = mp.Pool(self.interp_cpus)
+            tmp = pool.map(wrf.interplevel,group)
+            pool.close()
+            pool.join()
+            '''
 
-        elif vertical_interp_order == 2 or vertical_interp_order == 3:
+        elif ver_interp_order == 2:
             pool = mp.Pool(self.interp_cpus)
             tmp = pool.starmap(self.spline, group)
             pool.close()
             pool.join()
-
-
         for idx, varname in enumerate(self.varlist3D):
+            #tmp = np.array(wrf.interplevel(var,wrf_vertical,self.z))
             tmp2 = interp2D_fast_layers(
                 wrf_dx, wrf_dy, self.xTR, self.yTR, tmp[idx])
+            # tmp2 = self.fill_value(tmp2)
             exec(f'self.{varname} = tmp2')
 
         if 'hgt' in self.varlist2D:
@@ -102,15 +137,48 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
             self.terrain_mask_vars()  # 將地形內部的格點設定為nan
 
     def set_terrain(self):
-        self.z_3d = np.stack([np.stack([self.z]*self.Nt, axis=-1)]*self.Nr, axis=-1)
-        self.hgt_3d = np.stack([self.hgt]*self.Nz)
-        self.terrain_mask = np.where(self.z_3d <= self.hgt_3d, True, False)
+        def fix_hgt_idx(hgt_idx):
+            hgt_idx[0, 1: -1] = np.where(hgt_idx[0, 1: -1] <
+                                         hgt_idx[1, 1: -1],
+                                         hgt_idx[1, 1: -1],
+                                         hgt_idx[0, 1: -1])
+            hgt_idx[-1, 1: -1] = np.where(hgt_idx[-1, 1: -1] <
+                                          hgt_idx[-2, 1: -1],
+                                          hgt_idx[-2, 1: -1],
+                                          hgt_idx[-1, 1: -1])
+            hgt_idx[1: -1, 0] = np.where(hgt_idx[1: -1, 0] <
+                                         hgt_idx[1: -1, 1],
+                                         hgt_idx[1: -1, 1],
+                                         hgt_idx[1: -1, 0])
+            hgt_idx[1: -1, -1] = np.where(hgt_idx[1: -1, -1] <
+                                          hgt_idx[1: -1, -2],
+                                          hgt_idx[1: -1, -2],
+                                          hgt_idx[1: -1, -1])
+            hgt_idx[0, 0] = np.max(
+                [hgt_idx[0, 0], hgt_idx[1, 0], hgt_idx[0, 1]])
+            hgt_idx[0, -1] = np.max([hgt_idx[0, -1],
+                                    hgt_idx[1, -1], hgt_idx[0, -2]])
+            hgt_idx[-1, 0] = np.max([hgt_idx[-1, 0],
+                                    hgt_idx[-2, 0], hgt_idx[-1, 1]])
+            hgt_idx[-1, -1] = np.max([hgt_idx[-1, -1],
+                                     hgt_idx[-2, -1], hgt_idx[-1, -2]])
+            return hgt_idx
 
+        # hgt_mask為各網格是否在地形內，以wrfout內的地形高度HGT作為地形高度標準
+        # hgt_idx為各水平位置點上，有多少個點位於地形之下
+        self.hgt_idx = (self.hgt-self.z_start)//self.dz + 1
+        self.hgt_idx = self.hgt_idx.astype('int32')
+        self.hgt_idx = np.where(self.hgt_idx < 0, 0, self.hgt_idx)
+        self.hgt_idx = fix_hgt_idx(self.hgt_idx)
+        self.hgt_mask = np.where(
+            self.hgt_idx.reshape(1, self.Ntheta, self.Nr) > np.arange(
+                0, self.Nz, 1).reshape(-1, 1, 1),
+            1, 0)
 
     def terrain_mask_vars(self):
         for varname in self.varlist3D:
             exec(
-                f'self.{varname} = np.where(self.terrain_mask,np.nan,self.{varname})')
+                f'self.{varname} = np.where(self.hgt_mask,np.nan,self.{varname})')
 
     # ------------------------------------------------------------------- #
     # computation  (cylindrical coordinates only)                         #
@@ -201,6 +269,14 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
         else:
             raise AttributeError('須先設定 u, v')
 
+    def calc_vr_vt10(self):
+        if 'u10' in dir(self) and 'v10' in dir(self):
+            theta = self.theta.reshape(-1, 1)
+            self.vr10 = self.v10*np.sin(theta) + self.u10*np.cos(theta)
+            self.vt10 = self.v10*np.cos(theta) - self.u10*np.sin(theta)
+        else:
+            raise AttributeError('須先設定 u10, v10')
+
     def calc_fric_vr_vt(self):
         if 'fric_u' in dir(self) and 'fric_v' in dir(self):
             theta = self.theta.reshape(1, -1, 1)
@@ -237,6 +313,22 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
             self.Nz), max_wind_r_idx]
         self.vt_max_RMW = self.sym_vt[np.arange(self.Nz), max_wind_r_idx]
 
+
+    def find_rmw_and_speed10(self):
+        if 'sym_vt10' not in dir(self):
+            if 'vt10' not in dir(self):
+                self.calc_vr_vt10()
+            self.calc_axisymmetric_asymmetric('vt10')
+        if 'sym_wind_speed10' not in dir(self):
+            if 'wind_speed10' not in dir(self):
+                self.calc_wind_speed10()
+            self.calc_axisymmetric_asymmetric('wind_speed10')
+
+        max_wind_r_idx = np.nanargmax(self.sym_wind_speed10, axis=1)
+        self.RMW10 = self.r[max_wind_r_idx]
+        self.wspd_max_RMW10 = self.sym_wind_speed10[max_wind_r_idx]
+        self.vt_max_RMW10 = self.sym_vt[max_wind_r_idx]
+
     # ------------------------------------------------------------------- #
     # computation for agradient force (cylindrical coordinates only)      #
     # ------------------------------------------------------------------- #
@@ -265,12 +357,26 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
         else:
             raise AttributeError('須先設定 u, v')
 
+    def calc_wind_speed10(self):
+        if 'u10' in dir(self) and 'v10' in dir(self):
+            self.wind_speed10 = (self.u10**2 + self.v10**2)**0.5
+        else:
+            raise AttributeError('須先設定 u10, v10')
+
     def calc_kinetic_energy(self):
         if 'vr' not in dir(self) or 'vt' not in dir(self):
             self.calc_vr_vt()
         if 'w' in dir(self):
             self.kinetic_energy = \
                 (self.vr**2 + self.vt**2 + self.w**2)/2
+        else:
+            raise AttributeError('須先設定 w')
+
+    def calc_kinetic_energy10(self):
+        if 'vr10' not in dir(self) or 'vt10' not in dir(self):
+            self.calc_vr_vt10()
+            self.kinetic_energy10 = \
+                (self.vr10**2 + self.vt10**2)/2
         else:
             raise AttributeError('須先設定 w')
 
@@ -439,17 +545,24 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
         else:
             raise DimensionError('varname不是3維(z, theta, r)或1維(z)')
 
-    def calc_IKE(self, rmax = np.nan):
-        if 'kinetic_energy' not in dir(self):
-            self.calc_kinetic_energy()
+    def calc_IKE10(self, rmax = np.nan, min_wspd10 = 0., rho = np.nan):
+        if 'kinetic_energy10' not in dir(self):
+            self.calc_kinetic_energy10()
+        if 'wind_speed10' not in dir(self):
+            self.calc_wind_speed10()
         if 'rho' not in dir(self):
             self.calc_rho()
-        if rmax == np.nan or rmax >= self.r[-1]:
-            idx = self.r.shape[0]
-        else:
-            idx = np.where(self.r - rmax < 0)[0][-1]
-
-        r3d = np.stack([np.stack([self.r[:idx]]*self.Ntheta)]*self.Nz)
-        volume = r3d*self.dr*self.dtheta*self.dz
-        self.IKE = np.nansum(self.rho[:,:,:idx]*self.kinetic_energy[:,:,:idx]*volume)
+            zidx = np.nanargmin(np.abs(self.z - 10.))
+            if np.isnan(rho):
+                rho = self.rho[zidx,:,:]
+            else:
+                rho = self.rho[zidx,:,:]*0 + rho
+        
+        r2d = np.stack([self.r]*self.Ntheta)
+        if not (np.isnan(rmax)):
+            r2d = np.where(r2d <= rmax, r2d, 0.)
+        r2d = np.where(self.wind_speed10 > min_wspd10, r2d, 0.)
+        h = 1.
+        volume = r2d*self.dr*self.dtheta*h
+        self.IKE10 = np.nansum(rho*self.kinetic_energy10*volume)
 

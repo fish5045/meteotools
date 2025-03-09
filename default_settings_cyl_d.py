@@ -31,7 +31,7 @@ dwrf['dt'] = 3600  # 2wrfout的時間間格dt
 
 #直角坐標系網格設定 (用於疊代擾動氣壓)
 dcyl = d['cylindrical_grid']  # 圓柱座標設定
-dcyl['Nr'] = 150  # 徑向格數
+dcyl['Nr'] = 300  # 徑向格數
 dcyl['Ntheta'] = 90  # 切向格數
 dcyl['Nz'] = 15  # 垂直格數
 dcyl['dr'] = 1000  # 徑向網格大小 (m)
