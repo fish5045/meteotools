@@ -1,8 +1,33 @@
 from .check_arrays import check_array_and_process_nan_2d, \
                           flatten_multi_dimension_array_2d
-from meteotools.fastcompute import interp2d_fast, interp2d_fast_layers
 from meteotools.exceptions import DimensionError
 from numpy import ndarray
+import numpy as np
+import ctypes as ct
+from meteotools import path_of_meteotools, platform_name
+
+
+cint = ct.c_int
+cdouble = ct.c_double
+cdouble_p = ct.POINTER(ct.c_double)
+if platform_name == 'Windows':
+    fastcompute = ct.CDLL(path_of_meteotools + '/lib/fastcompute.dll')
+elif platform_name == 'Linux':
+    fastcompute = ct.CDLL(path_of_meteotools + '/lib/fastcompute.so')
+fastcompute.interp2D_fast.argtypes = [cint, cint,
+                                    cdouble, cdouble,
+                                    cint, cdouble_p,
+                                    cdouble_p,
+                                    cdouble_p,
+                                    cdouble_p]
+fastcompute.interp2D_fast.restype = None
+fastcompute.interp2D_fast_layers.argtypes = [cint, cint, cint,
+                                    cdouble, cdouble,
+                                    cint, cdouble_p,
+                                    cdouble_p,
+                                    cdouble_p,
+                                    cdouble_p]
+fastcompute.interp2D_fast_layers.restype = None
 
 
 @check_array_and_process_nan_2d
@@ -31,9 +56,31 @@ def interp2D_fast(dx: float, dy: float,
 
     '''
     if len(data.shape) == 2:
-        output = interp2d_fast(
-            dx, dy, xLoc.reshape(-1), yLoc.reshape(-1), data)
-        return output.reshape(xLoc.shape)
+        original_loc_shape = xLoc.shape
+        xLoc = xLoc.reshape(-1)
+        yLoc = yLoc.reshape(-1)
+        lenx = data.shape[1]
+        leny = data.shape[0]
+        N = xLoc.shape[0]
+
+        original_data_dtype = data.dtype
+        if original_data_dtype != np.float64:
+            data = data.astype(np.float64)
+
+        if data.flags.f_contiguous != True:
+            data = np.asfortranarray(data)
+
+        output = np.empty(N)
+
+        fastcompute.interp2D_fast(ct.c_int(lenx),ct.c_int(leny),ct.c_double(dx),
+                            ct.c_double(dy),ct.c_int(N),
+                            xLoc.ctypes.data_as(cdouble_p),
+                            yLoc.ctypes.data_as(cdouble_p),
+                            data.ctypes.data_as(cdouble_p),
+                            output.ctypes.data_as(cdouble_p))
+
+
+        return output.reshape(original_loc_shape)
 
     else:
         raise DimensionError("來源資料(data)維度需為2")
@@ -72,9 +119,32 @@ def interp2D_fast_layers(dx: float, dy: float,
     '''
 
     # 維度處理，包含輸出的output維度、內插的layer層數
-    output = interp2d_fast_layers(
-        dx, dy,
-        xLoc.reshape(-1), yLoc.reshape(-1),
-        data)
+    original_loc_shape = xLoc.shape
+    xLoc = xLoc.reshape(-1)
+    yLoc = yLoc.reshape(-1)
 
-    return output
+    lenx = data.shape[2]
+    leny = data.shape[1]
+    N = xLoc.shape[0]
+    layers = data.shape[0]
+
+    original_data_dtype = data.dtype
+    if original_data_dtype != np.float64:
+        data = data.astype(np.float64)
+
+    if data.flags.f_contiguous != True:
+        data = np.asfortranarray(data)
+
+    output = np.empty([layers,N])
+    output = np.asfortranarray(output)
+
+    fastcompute.interp2D_fast_layers(ct.c_int(lenx),ct.c_int(leny),
+                                     ct.c_int(layers),ct.c_double(dx),
+                                    ct.c_double(dy),ct.c_int(N),
+                                    xLoc.ctypes.data_as(cdouble_p),
+                                    yLoc.ctypes.data_as(cdouble_p),
+                                    data.ctypes.data_as(cdouble_p),
+                                    output.ctypes.data_as(cdouble_p))
+
+
+    return output.reshape([data.shape[0]] + list(original_loc_shape))

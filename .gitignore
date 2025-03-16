@@ -7,3 +7,6 @@ small_test.py
 data
 data/*
 wrfdata
+lib/*
+*.mod
+

@@ -1,3 +1,12 @@
+import inspect
+import platform
+import os
+
+frame = inspect.currentframe()
+file_path = frame.f_globals['__file__']
+path_of_meteotools = os.path.dirname(os.path.abspath(file_path))
+platform_name = platform.system()
+
 # version: 0.2.1 2023/3/14
 # 新增calc.grids (尚未測試)
 

@@ -28,7 +28,7 @@ do i = 1, N
     else
         y1 = y0 + 1
     end if
-    
+
     !內插計算
     Z00 = xyData(y0,x0)
     Z10 = xyData(y0,x1)
@@ -77,7 +77,7 @@ do k = 1, layers
         else
             y1 = y0 + 1
         end if
-            
+
         !內插計算
         Z00 = xyData(k,y0,x0)
         Z10 = xyData(k,y0,x1)
@@ -119,7 +119,7 @@ do i = 1, Nr
     else
         x1 = x0 + 1
     end if
-    
+
     !內插計算
     Z0 = xData(x0)
     Z1 = xData(x1)
@@ -150,7 +150,7 @@ do k = 1,layers
             NewData(k,i) = 1.7D308
             cycle
         end if
-        
+
         !決定內插的index，若為最後一格，x1 = x0 = lenx
         x0 = int(xNewLoc(i)/dx)+1
         if (xNewLoc(i) == (lenx-1)*dx) then
@@ -158,7 +158,7 @@ do k = 1,layers
         else
             x1 = x0 + 1
         end if
-        
+
         !內插計算
         Z0 = xData(k,x0)
         Z1 = xData(k,x1)
@@ -191,7 +191,7 @@ do i = 1, N
         NewData(i) = 1.7D308
         cycle
     end if
-    
+
     !決定內插的index，若為最後一格，x1 = x0 = lenx
     x0 = int(xNewLoc(i)/dx)+1
     if (xNewLoc(i) == (lenx-1)*dx) then
@@ -211,7 +211,7 @@ do i = 1, N
     else
         z1 = z0 + 1
     end if
-    
+
     !內插計算
     w000 = xyzData(z0,y0,x0)
     w010 = xyzData(z0,y1,x0)
@@ -260,7 +260,7 @@ do k = 1, layers
             NewData(k,i) = 1.7D308
             cycle
         end if
-        
+
         !決定內插的index，若為最後一格，x1 = x0 = lenx
         x0 = int(xNewLoc(i)/dx)+1
         if (xNewLoc(i) == (lenx-1)*dx) then
@@ -280,7 +280,7 @@ do k = 1, layers
         else
             z1 = z0 + 1
         end if
-        
+
         !內插計算
         w000 = xyzData(k,z0,y0,x0)
         w010 = xyzData(k,z0,y1,x0)
@@ -323,7 +323,7 @@ implicit none
 real*8 :: Z0, Z1
 integer :: x0, x1
 integer :: i, k
-integer,intent(in) :: lenx, N   
+integer,intent(in) :: lenx, N
 real*8,intent(in) :: x_output(N), inData(lenx), x_input(lenx)
 real*8,intent(out) :: outData(N)
 

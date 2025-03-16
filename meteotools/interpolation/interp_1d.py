@@ -4,6 +4,41 @@ from .check_arrays import check_array_and_process_nan_1d, \
 from meteotools.fastcompute import interp1d_fast, interp1d, interp1d_fast_layers
 from meteotools.exceptions import DimensionError
 from numpy import ndarray, zeros
+import numpy as np
+import ctypes as ct
+from meteotools import path_of_meteotools, platform_name
+
+
+cint = ct.c_int
+cdouble = ct.c_double
+cdouble_p = ct.POINTER(ct.c_double)
+if platform_name == 'Windows':
+    fastcompute = ct.CDLL(path_of_meteotools + '/lib/fastcompute.dll')
+elif platform_name == 'Linux':
+    fastcompute = ct.CDLL(path_of_meteotools + '/lib/fastcompute.so')
+
+fastcompute.interp1D_fast.argtypes = [cint,
+                                    cdouble,
+                                    cint, cdouble_p,
+                                    cdouble_p,
+                                    cdouble_p]
+fastcompute.interp1D_fast.restype = None
+fastcompute.interp1D_fast_layers.argtypes = [cint, cint,
+                                    cdouble,
+                                    cint, cdouble_p,
+                                    cdouble_p,
+                                    cdouble_p]
+fastcompute.interp1D_fast_layers.restype = None
+fastcompute.interp1D_nonequal.argtypes = [cint, cdouble_p,
+                                    cint,
+                                    cdouble_p, cdouble_p,
+                                    cdouble_p,]
+fastcompute.interp1D_nonequal.restype = None
+fastcompute.interp1D_nonequal_layers.argtypes = [cint, cdouble_p,
+                                    cint, cint,
+                                    cdouble_p, cdouble_p,
+                                    cdouble_p,]
+fastcompute.interp1D_nonequal_layers.restype = None
 
 
 @check_array_and_process_nan_1d
@@ -29,14 +64,31 @@ def interp1D_fast(dx: float, xLoc: ndarray, data: ndarray) -> ndarray:
     '''
 
     if len(data.shape) == 1:
-        output = interp1d_fast(dx, xLoc.reshape(-1), data)
-        return output.reshape(xLoc.shape)
+        original_loc_shape = xLoc.shape
+        xLoc = xLoc.reshape(-1)
+        lenx = data.shape[0]
+        N = xLoc.shape[0]
+
+        original_data_dtype = data.dtype
+        if original_data_dtype != np.float64:
+            data = data.astype(np.float64)
+
+        output = np.empty(N)
+
+        fastcompute.interp1D_fast(ct.c_int(lenx),ct.c_double(dx),
+                            ct.c_int(N),
+                            xLoc.ctypes.data_as(cdouble_p),
+                            data.ctypes.data_as(cdouble_p),
+                            output.ctypes.data_as(cdouble_p))
+
+
+        return output.reshape(original_loc_shape)
     else:
         raise DimensionError("來源資料(data)維度需為1")
 
 
 @check_array_and_process_nan_1d_nonequal
-def interp1D(x_input: ndarray, x_output: ndarray, data: ndarray) -> ndarray:
+def interp1D_nonequal(x_input: ndarray, x_output: ndarray, data: ndarray) -> ndarray:
     '''
     將不等間距的1D坐標線性內插至任意位置，data須為一維。
 
@@ -56,8 +108,26 @@ def interp1D(x_input: ndarray, x_output: ndarray, data: ndarray) -> ndarray:
     '''
 
     if len(data.shape) == 1:
-        output = interp1d(x_input.reshape(-1), x_output.reshape(-1), data)
-        return output.reshape(x_output.shape)
+        original_loc_shape = x_output.shape
+        x_output = x_output.reshape(-1)
+        lenx = data.shape[0]
+        N = x_output.shape[0]
+
+        if data.dtype != np.float64:
+            data = data.astype(np.float64)
+
+        if x_input.dtype != np.float64:
+            x_input = x_input.astype(np.float64)
+
+        output = np.empty(N)
+
+        fastcompute.interp1D_nonequal(ct.c_int(lenx),x_input.ctypes.data_as(cdouble_p),
+                                  ct.c_int(N),x_output.ctypes.data_as(cdouble_p),
+                                  data.ctypes.data_as(cdouble_p),
+                                  output.ctypes.data_as(cdouble_p))
+
+
+        return output.reshape(original_loc_shape)
     else:
         raise DimensionError("來源資料(data)維度需為1")
 
@@ -89,14 +159,37 @@ def interp1D_fast_layers(dx: float, xLoc: ndarray, data: ndarray):
     內插後的陣列
     '''
 
-    output = interp1d_fast_layers(dx, xLoc.reshape(-1), data)
+    original_loc_shape = xLoc.shape
+    xLoc = xLoc.reshape(-1)
 
-    return output
+    lenx = data.shape[1]
+    N = xLoc.shape[0]
+    layers = data.shape[0]
+
+    if data.dtype != np.float64:
+        data = data.astype(np.float64)
+
+    if data.flags.f_contiguous != True:
+        data = np.asfortranarray(data)
+
+    output = np.empty([layers,N])
+    output = np.asfortranarray(output)
+
+    fastcompute.interp1D_fast_layers(ct.c_int(lenx),
+                                     ct.c_int(layers),ct.c_double(dx),
+                                    ct.c_int(N),
+                                    xLoc.ctypes.data_as(cdouble_p),
+                                    data.ctypes.data_as(cdouble_p),
+                                    output.ctypes.data_as(cdouble_p))
+
+
+    return output.reshape([data.shape[0]] + list(original_loc_shape))
+
 
 
 @check_array_and_process_nan_1d_nonequal
 @flatten_multi_dimension_array_1d
-def interp1D_layers(x_input: ndarray, x_output: ndarray, data: ndarray):
+def interp1D_nonequal_layers(x_input: ndarray, x_output: ndarray, data: ndarray):
     '''
     將不等間距的1D坐標線性內插至任意位置，並延其他維度都做相同的內插，如高度
     data的最後一個維度網格間距必須相等。
@@ -120,12 +213,30 @@ def interp1D_layers(x_input: ndarray, x_output: ndarray, data: ndarray):
     -------
     內插後的陣列
     '''
+    original_loc_shape = x_output.shape
+    x_output = x_output.reshape(-1)
+    lenx = data.shape[1]
+    N = x_output.shape[0]
     layers = data.shape[0]
-    output = zeros([layers]+list(x_output.shape))
-    for i in range(layers):
-        output[i] = interp1d(
-            x_input.reshape(-1),
-            x_output.reshape(-1),
-            data[i])
 
-    return output
+
+    if data.dtype != np.float64:
+        data = data.astype(np.float64)
+
+    if x_input.dtype != np.float64:
+        x_input = x_input.astype(np.float64)
+
+    if data.flags.f_contiguous != True:
+        data = np.asfortranarray(data)
+
+    output = np.empty([layers,N])
+    output = np.asfortranarray(output)
+
+    fastcompute.interp1D_nonequal_layers(ct.c_int(lenx),x_input.ctypes.data_as(cdouble_p),
+                                ct.c_int(layers), ct.c_int(N),
+                                x_output.ctypes.data_as(cdouble_p),
+                                data.ctypes.data_as(cdouble_p),
+                                output.ctypes.data_as(cdouble_p))
+
+
+    return output.reshape([data.shape[0]] + list(original_loc_shape))

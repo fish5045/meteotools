@@ -557,7 +557,7 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
                 rho = self.rho[zidx,:,:]
             else:
                 rho = self.rho[zidx,:,:]*0 + rho
-        
+
         r2d = np.stack([self.r]*self.Ntheta)
         if not (np.isnan(rmax)):
             r2d = np.where(r2d <= rmax, r2d, 0.)

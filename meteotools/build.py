@@ -13,7 +13,13 @@ import os
 import platform
 import subprocess
 import shutil
+from pathlib import Path
+import inspect
+frame = inspect.currentframe()
+file_path = frame.f_globals['__file__']
+path_of_meteotools = os.path.dirname(os.path.abspath(file_path))
 
+platform_name = platform.system()
 
 class task:
     def __init__(self, build_name, source_name, source_version, source_type,
@@ -31,7 +37,14 @@ class task:
         if source_type != '':
             self.source_code += '.'+source_type
 
-        self.platform = platform.system()
+        self.platform = platform_name
+
+        if self.platform == 'Windows':
+            self.lib_extension = '.dll'
+        elif self.platform == 'Linux':
+            self.lib_extension = '.so'
+
+
 
     def UTF8_to_Big5(self):
         try:
@@ -68,24 +81,31 @@ class task:
             shutil.rmtree(f'{build_name}')
 
     def run_compile(self,):
-        compile_command = f'f2py -m {self.build_name} -c {self.source_code} ' + \
-                          f'--opt={self.optimization}'
+        
+        compiler = 'gfortran'
+        flags = '-shared -fPIC -fopenmp -pthread'
+        linked_library = '-lgomp'
+        output = f'{path_of_meteotools}/lib/{self.source_name}{self.lib_extension}'
+        compile_command = compiler + ' ' \
+                          + flags + ' ' \
+                          + linked_library + ' ' \
+                          + '-o ' + output + ' ' \
+                          + path_of_meteotools+'/'+self.source_code + ' ' \
+                          + self.optimization
 
         self.check_source_encoding()
         self.back_content = subprocess.check_output(
             compile_command, shell=True)
-        self.move_compiled_to_destination()
 
 
 if __name__ == '__main__':
-    print(os.getcwd())
-    ### compile SEeqn ###
+    Path('lib').mkdir(parents=True, exist_ok=True)
     build_name = 'fastcompute'
-    source_name = 'subroutine_to_python'
+    source_name = 'fastcompute'
     source_version = ''
-    source_type = 'f95'
+    source_type = 'f90'
     optimization = '-O3'
-
-    SEeqn = task(build_name, source_name, source_version,
+    
+    fastcompute = task(build_name, source_name, source_version,
                  source_type, optimization)
-    SEeqn.run_compile()
+    fastcompute.run_compile()
