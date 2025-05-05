@@ -53,8 +53,8 @@ class gridsystem:
             self.meta_list.append(settingname)
 
             if type(settings[settingname]) == str:
-                text = f'"{settings[settingname]}"'
-                exec(f"self.{settingname} = {text}")
+                text = f'{settings[settingname]}'
+                exec(f"self.{settingname} = {text!r}")
             else:
                 exec(f"self.{settingname} = {settings[settingname]}")
 

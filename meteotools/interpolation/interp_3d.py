@@ -1,6 +1,5 @@
 from .check_arrays import check_array_and_process_nan_3d, \
     flatten_multi_dimension_array_3d
-from meteotools.fastcompute import interp3d_fast, interp3d_fast_layers
 from meteotools.exceptions import DimensionError
 from numpy import ndarray
 import numpy as np

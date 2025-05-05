@@ -1,7 +1,6 @@
 from .check_arrays import check_array_and_process_nan_1d, \
     check_array_and_process_nan_1d_nonequal, \
     flatten_multi_dimension_array_1d
-from meteotools.fastcompute import interp1d_fast, interp1d, interp1d_fast_layers
 from meteotools.exceptions import DimensionError
 from numpy import ndarray, zeros
 import numpy as np
