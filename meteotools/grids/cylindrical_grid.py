@@ -545,6 +545,35 @@ class cylindrical_grid(gridsystem, calc_thermaldynamic):
         else:
             raise DimensionError('varname不是3維(z, theta, r)或1維(z)')
 
+    def create_filter_axis(self, axis, vmin, vmax):
+        faxis = np.ones(axis.shape)
+        faxis = np.where(axis >= vmin, faxis, 0)
+        faxis = np.where(axis <= vmax, faxis, 0)
+        return faxis
+
+    def calc_IKE(self, rmin=np.nan, rmax=np.nan, zmin=np.nan, zmax=np.nan):
+        if 'kinetic_energy' not in dir(self):
+            self.calc_kinetic_energy()
+        if 'rho' not in dir(self):
+            self.calc_rho()
+        
+        if np.isnan(rmin):
+            rmin = self.r[0]
+        if np.isnan(rmax):
+            rmax = self.r[-1]
+        if np.isnan(zmin):
+            zmin = self.z[0]
+        if np.isnan(zmax):
+            zmax = self.z[-1]
+            
+        filter_r = self.create_filter_axis(self.r, rmin, rmax)
+        filter_z = self.create_filter_axis(self.z, zmin, zmax)
+        r3d = np.stack([np.stack([self.r]*self.Ntheta)]*self.Nz)
+        volume = r3d*self.dr*self.dtheta*self.dz
+        volume *= filter_z.reshape(-1, 1, 1)
+        volume *= filter_r.reshape(1, 1, -1)
+        self.IKE = np.nansum(self.rho*self.kinetic_energy*volume)
+
     def calc_IKE10(self, rmax = np.nan, min_wspd10 = 0., rho = np.nan):
         if 'kinetic_energy10' not in dir(self):
             self.calc_kinetic_energy10()
